@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  exam_request: one
+  value: 9.99
+  unit: MyString
+  lab_technician: one
+  performed_at: 2025-06-27 14:29:20
+  notes: MyText
+
+two:
+  exam_request: two
+  value: 9.99
+  unit: MyString
+  lab_technician: two
+  performed_at: 2025-06-27 14:29:20
+  notes: MyText

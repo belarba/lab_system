@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  patient: one
+  doctor: one
+  exam_type: one
+  scheduled_date: 2025-06-27 14:28:37
+  status: MyString
+  notes: MyText
+
+two:
+  patient: two
+  doctor: two
+  exam_type: two
+  scheduled_date: 2025-06-27 14:28:37
+  status: MyString
+  notes: MyText

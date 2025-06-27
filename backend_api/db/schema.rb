@@ -10,9 +10,49 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_27_130807) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_27_132920) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "exam_requests", force: :cascade do |t|
+    t.bigint "patient_id", null: false
+    t.bigint "doctor_id", null: false
+    t.bigint "exam_type_id", null: false
+    t.datetime "scheduled_date"
+    t.string "status"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["doctor_id"], name: "index_exam_requests_on_doctor_id"
+    t.index ["exam_type_id"], name: "index_exam_requests_on_exam_type_id"
+    t.index ["patient_id", "doctor_id"], name: "index_exam_requests_on_patient_id_and_doctor_id"
+    t.index ["patient_id"], name: "index_exam_requests_on_patient_id"
+    t.index ["scheduled_date"], name: "index_exam_requests_on_scheduled_date"
+    t.index ["status"], name: "index_exam_requests_on_status"
+  end
+
+  create_table "exam_results", force: :cascade do |t|
+    t.bigint "exam_request_id", null: false
+    t.decimal "value"
+    t.string "unit"
+    t.bigint "lab_technician_id", null: false
+    t.datetime "performed_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["exam_request_id"], name: "index_exam_results_on_exam_request_id"
+    t.index ["lab_technician_id"], name: "index_exam_results_on_lab_technician_id"
+    t.index ["performed_at"], name: "index_exam_results_on_performed_at"
+  end
+
+  create_table "exam_types", force: :cascade do |t|
+    t.string "name"
+    t.text "description"
+    t.text "reference_range"
+    t.string "unit"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "roles", force: :cascade do |t|
     t.string "name"
@@ -40,6 +80,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_27_130807) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "exam_requests", "exam_types"
+  add_foreign_key "exam_requests", "users", column: "doctor_id"
+  add_foreign_key "exam_requests", "users", column: "patient_id"
+  add_foreign_key "exam_results", "exam_requests"
+  add_foreign_key "exam_results", "users", column: "lab_technician_id"
   add_foreign_key "user_roles", "roles"
   add_foreign_key "user_roles", "users"
 end
