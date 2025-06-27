@@ -18,6 +18,29 @@ class User < ApplicationRecord
   # Como técnico de laboratório
   has_many :lab_exam_results, class_name: "ExamResult", foreign_key: "lab_technician_id"
 
+  has_many :refresh_tokens, dependent: :destroy
+
+  def generate_tokens
+    access_token = JwtService.encode_access_token(id)
+    refresh_token_jwt = JwtService.encode_refresh_token(id)
+
+    # Salvar refresh token no banco
+    refresh_token_record = refresh_tokens.create!(
+      token: refresh_token_jwt,
+      expires_at: REFRESH_TOKEN_EXPIRATION.from_now
+    )
+
+    {
+      access_token: access_token,
+      refresh_token: refresh_token_jwt,
+      expires_in: ACCESS_TOKEN_EXPIRATION.to_i
+    }
+  end
+
+  def revoke_all_tokens
+    refresh_tokens.destroy_all
+  end
+
   # Métodos helper para verificar roles
   def has_role?(role_name)
     roles.exists?(name: role_name)

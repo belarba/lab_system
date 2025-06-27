@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_27_132920) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_27_135907) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,6 +54,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_27_132920) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "refresh_tokens", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "token"
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_refresh_tokens_on_expires_at"
+    t.index ["token"], name: "index_refresh_tokens_on_token", unique: true
+    t.index ["user_id"], name: "index_refresh_tokens_on_user_id"
+  end
+
   create_table "roles", force: :cascade do |t|
     t.string "name"
     t.text "description"
@@ -85,6 +96,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_27_132920) do
   add_foreign_key "exam_requests", "users", column: "patient_id"
   add_foreign_key "exam_results", "exam_requests"
   add_foreign_key "exam_results", "users", column: "lab_technician_id"
+  add_foreign_key "refresh_tokens", "users"
   add_foreign_key "user_roles", "roles"
   add_foreign_key "user_roles", "users"
 end
