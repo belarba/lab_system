@@ -1,5 +1,6 @@
 class LabFileUpload < ApplicationRecord
   belongs_to :uploaded_by, class_name: 'User'
+  has_many :exam_results, dependent: :nullify  # Adicionar esta linha
 
   validates :filename, presence: true
   validates :status, inclusion: { in: %w[pending processing completed failed] }

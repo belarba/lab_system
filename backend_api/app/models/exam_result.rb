@@ -1,6 +1,7 @@
 class ExamResult < ApplicationRecord
   belongs_to :exam_request
   belongs_to :lab_technician, class_name: 'User'
+  belongs_to :lab_file_upload, optional: true  # Adicionar esta linha
 
   validates :value, presence: true, numericality: true
   validates :unit, presence: true

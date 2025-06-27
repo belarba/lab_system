@@ -231,47 +231,36 @@ RSpec.describe 'Api::Uploads', type: :request do
         end
 
         it 'successfully processes valid CSV' do
-  csv_content = <<~CSV
-    patient_email,test_type,measured_value,unit,measured_at
-    patient@test.com,Glucose,95.5,mg/dL,2025-04-23T08:30:00Z
-  CSV
+          csv_content = <<~CSV
+            patient_email,test_type,measured_value,unit,measured_at
+            patient@test.com,Glucose,95.5,mg/dL,2025-04-23T08:30:00Z
+          CSV
 
-  file = create_csv_file(csv_content)
+          file = create_csv_file(csv_content)
 
-  puts "=== BEFORE REQUEST ==="
-  puts "LabFileUpload count: #{LabFileUpload.count}"
-  puts "ExamResult count: #{ExamResult.count}"
-  puts "File class: #{file.class}"
-  puts "Lab tech email: #{lab_tech.email}"
+          expect {
+            post '/api/uploads', params: { file: file }, headers: auth_headers(lab_tech)
+          }.to change(LabFileUpload, :count).by(1)
+           .and change(ExamResult, :count).by(1)
 
-  # Fazer a requisição separadamente
-  post '/api/uploads', params: { file: file }, headers: auth_headers(lab_tech)
+          expect(response.status).to eq(201)
 
-  puts "=== AFTER REQUEST ==="
-  puts "Response status: #{response.status}"
-  puts "Response body: #{response.body}"
-  puts "LabFileUpload count: #{LabFileUpload.count}"
-  puts "ExamResult count: #{ExamResult.count}"
+          data = JSON.parse(response.body)
+          expect(data['message']).to eq('File uploaded and processed successfully')
+          expect(data['upload']['status']).to eq('completed')
+          expect(data['upload']['total_records']).to eq(1)
+          expect(data['upload']['processed_records']).to eq(1)
+          expect(data['upload']['failed_records']).to eq(0)
+          expect(data['upload']['success_rate']).to eq(100.0)
 
-  if LabFileUpload.last
-    upload = LabFileUpload.last
-    puts "Upload: #{upload.inspect}"
-    puts "Upload status: #{upload.status}"
-    puts "Upload error details: #{upload.error_details}"
-    puts "Upload processing summary: #{upload.processing_summary}"
-  else
-    puts "No upload created!"
-  end
-
-  # Primeiro verificar se a requisição funcionou
-  expect(response.status).to eq(201)
-
-  # Depois verificar se o upload foi criado
-  expect(LabFileUpload.count).to eq(1)
-
-  # Por último verificar o resultado
-  expect(ExamResult.count).to eq(1)
-end
+          # Verificar se ExamResult foi criado corretamente
+          upload = LabFileUpload.last
+          result = ExamResult.find_by(lab_file_upload: upload)
+          expect(result).to be_present
+          expect(result.value).to eq(95.5)
+          expect(result.unit).to eq('mg/dL')
+          expect(result.lab_technician).to eq(lab_tech)
+        end
 
         it 'handles CSV with invalid data' do
           csv_content = <<~CSV
@@ -284,7 +273,7 @@ end
           expect {
             post '/api/uploads', params: { file: file }, headers: auth_headers(lab_tech)
           }.to change(LabFileUpload, :count).by(1)
-           .and change(ExamResult, :count).by(0)
+          .and change(ExamResult, :count).by(0)
 
           expect(response.status).to eq(201)
 
@@ -292,7 +281,7 @@ end
           upload = LabFileUpload.last
           expect(upload.processed_records).to eq(0)
           expect(upload.failed_records).to eq(1)
-          expect(upload.status).to eq('completed')
+          expect(upload.status).to eq('failed')  # Mudança aqui
         end
 
         it 'handles mixed valid and invalid data' do

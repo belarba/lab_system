@@ -76,7 +76,7 @@ RSpec.describe CsvImportService do
         expect { service.process }.not_to change(ExamResult, :count)
 
         upload.reload
-        expect(upload.status).to eq('completed')
+        expect(upload.status).to eq('failed')  # Mudança aqui
         expect(upload.total_records).to eq(2)
         expect(upload.processed_records).to eq(0)
         expect(upload.failed_records).to eq(2)

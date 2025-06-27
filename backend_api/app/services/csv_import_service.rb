@@ -76,7 +76,7 @@ class CsvImportService
       unit: row[:unit],
       lab_technician: lab_technician,
       performed_at: parse_datetime(row[:measured_at]),
-      lab_file_upload: @upload, # Adicionar esta linha
+      lab_file_upload: @upload,
       notes: "Imported from CSV upload ##{@upload.id} (row #{row_number})"
     )
 
@@ -192,19 +192,23 @@ class CsvImportService
       details: @processing_details
     }
 
+    # Lógica corrigida para status
     if @failed_count.zero?
+      # Todos os registros processados com sucesso
       @upload.update!(
         status: 'completed',
         processing_summary: summary.to_json
       )
       add_detail("Processing completed successfully: #{@processed_count}/#{@upload.total_records} records processed")
     elsif @processed_count.zero?
+      # Nenhum registro processado com sucesso (todos falharam)
       @upload.update!(
         status: 'failed',
         processing_summary: summary.to_json
       )
       add_detail("Processing failed: #{@failed_count}/#{@upload.total_records} records failed")
     else
+      # Processamento parcial (alguns sucessos, algumas falhas)
       @upload.update!(
         status: 'completed',
         processing_summary: summary.to_json
