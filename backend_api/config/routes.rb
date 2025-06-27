@@ -35,6 +35,9 @@ Rails.application.routes.draw do
         post :cancel
       end
     end
+
+    # Lab File Uploads
+    resources :uploads, only: [:index, :create, :show]
   end
 
   # Health check

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_27_135907) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_27_154755) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,7 +40,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_27_135907) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "lab_file_upload_id"
     t.index ["exam_request_id"], name: "index_exam_results_on_exam_request_id"
+    t.index ["lab_file_upload_id"], name: "index_exam_results_on_lab_file_upload_id"
     t.index ["lab_technician_id"], name: "index_exam_results_on_lab_technician_id"
     t.index ["performed_at"], name: "index_exam_results_on_performed_at"
   end
@@ -52,6 +54,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_27_135907) do
     t.string "unit"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "lab_file_uploads", force: :cascade do |t|
+    t.string "filename", null: false
+    t.integer "file_size"
+    t.string "status", default: "pending"
+    t.datetime "processed_at"
+    t.bigint "uploaded_by_id", null: false
+    t.integer "total_records", default: 0
+    t.integer "processed_records", default: 0
+    t.integer "failed_records", default: 0
+    t.text "error_details"
+    t.text "processing_summary"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["processed_at"], name: "index_lab_file_uploads_on_processed_at"
+    t.index ["status"], name: "index_lab_file_uploads_on_status"
+    t.index ["uploaded_by_id"], name: "index_lab_file_uploads_on_uploaded_by_id"
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
@@ -95,7 +115,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_27_135907) do
   add_foreign_key "exam_requests", "users", column: "doctor_id"
   add_foreign_key "exam_requests", "users", column: "patient_id"
   add_foreign_key "exam_results", "exam_requests"
+  add_foreign_key "exam_results", "lab_file_uploads"
   add_foreign_key "exam_results", "users", column: "lab_technician_id"
+  add_foreign_key "lab_file_uploads", "users", column: "uploaded_by_id"
   add_foreign_key "refresh_tokens", "users"
   add_foreign_key "user_roles", "roles"
   add_foreign_key "user_roles", "users"

@@ -5,6 +5,7 @@ ExamResult.destroy_all
 ExamRequest.destroy_all
 ExamType.destroy_all
 RefreshToken.destroy_all
+LabFileUpload.destroy_all
 UserRole.destroy_all
 Role.destroy_all
 User.destroy_all
