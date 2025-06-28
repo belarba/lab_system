@@ -6,6 +6,7 @@ class User < ApplicationRecord
 
   validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :name, presence: true
+  validates :phone, format: { with: /\A[\+]?[0-9\s\-\(\)]{7,15}\z/, message: "must be a valid phone number" }, allow_blank: true
 
   # Como paciente
   has_many :patient_exam_requests, class_name: "ExamRequest", foreign_key: "patient_id"
@@ -60,5 +61,33 @@ class User < ApplicationRecord
 
   def admin?
     has_role?("admin")
+  end
+
+  # Método para verificar se pode solicitar exame (1 por semana do mesmo tipo)
+  def can_request_exam?(exam_type)
+    return false unless patient?
+
+    one_week_ago = 1.week.ago
+    existing_request = patient_exam_requests
+                      .where(exam_type: exam_type)
+                      .where(created_at: one_week_ago..Time.current)
+                      .where.not(status: 'cancelled')
+                      .exists?
+
+    !existing_request
+  end
+
+  # Método para verificar se pode cancelar exame (até 3 horas antes)
+  def can_cancel_exam_request?(exam_request)
+    return false unless exam_request.patient == self || exam_request.doctor == self || admin?
+    return false if exam_request.completed? || exam_request.status == 'cancelled'
+
+    # Pacientes só podem cancelar até 3 horas antes
+    if patient? && exam_request.patient == self
+      return exam_request.scheduled_date > 3.hours.from_now
+    end
+
+    # Médicos e admins podem cancelar a qualquer momento
+    true
   end
 end
