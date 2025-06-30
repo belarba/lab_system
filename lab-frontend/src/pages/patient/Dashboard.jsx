@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -17,11 +17,13 @@ import {
 const PatientDashboard = () => {
   return (
     <Routes>
-      <Route path="/" element={<PatientHome />} />
-      <Route path="/profile" element={<PatientProfile />} />
-      <Route path="/exams" element={<PatientExams />} />
-      <Route path="/request" element={<RequestExam />} />
-      <Route path="/results" element={<PatientResults />} />
+      <Route index element={<PatientHome />} />
+      <Route path="profile" element={<PatientProfile />} />
+      <Route path="exams" element={<PatientExams />} />
+      <Route path="request" element={<RequestExam />} />
+      <Route path="results" element={<PatientResults />} />
+      {/* Rota catch-all para redirecionar para home se não encontrar */}
+      <Route path="*" element={<Navigate to="/patient" replace />} />
     </Routes>
   );
 };
@@ -188,9 +190,9 @@ const PatientHome = () => {
         <h2 className="text-lg font-medium text-gray-900 mb-4">Ações Rápidas</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {quickActions.map((action) => (
-            <a
+            <Link
               key={action.name}
-              href={action.href}
+              to={action.href}
               className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
             >
               <div>
@@ -207,7 +209,7 @@ const PatientHome = () => {
                   {action.description}
                 </p>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>
@@ -216,9 +218,9 @@ const PatientHome = () => {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-gray-900">Exames Recentes</h2>
-          <a href="/patient/exams" className="text-sm text-primary-600 hover:text-primary-700">
+          <Link to="/patient/exams" className="text-sm text-primary-600 hover:text-primary-700">
             Ver todos
-          </a>
+          </Link>
         </div>
         
         {recentExams.length > 0 ? (
@@ -278,9 +280,9 @@ const PatientHome = () => {
               Comece solicitando seu primeiro exame laboratorial.
             </p>
             <div className="mt-6">
-              <a href="/patient/request" className="btn-primary">
+              <Link to="/patient/request" className="btn-primary">
                 Solicitar Exame
-              </a>
+              </Link>
             </div>
           </div>
         )}
@@ -288,7 +290,5 @@ const PatientHome = () => {
     </div>
   );
 };
-
-// Placeholder components para outras rotas - REMOVIDO já que agora temos as páginas reais
 
 export default PatientDashboard;

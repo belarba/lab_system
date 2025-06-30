@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { 
   Bars3Icon, 
@@ -15,6 +16,7 @@ import {
 const Layout = ({ children }) => {
   const { user, logout, hasRole } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
 
   const navigation = [
     // Navegação para pacientes
@@ -54,6 +56,30 @@ const Layout = ({ children }) => {
     await logout();
   };
 
+  const isCurrentPath = (href) => {
+    if (href === '/patient' || href === '/doctor' || href === '/lab' || href === '/admin') {
+      return location.pathname === href;
+    }
+    return location.pathname.startsWith(href);
+  };
+
+  const NavLink = ({ item, mobile = false }) => (
+    <Link
+      to={item.href}
+      className={`group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors ${
+        isCurrentPath(item.href)
+          ? 'bg-primary-100 text-primary-700'
+          : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+      }`}
+      onClick={mobile ? () => setSidebarOpen(false) : undefined}
+    >
+      <item.icon className={`h-6 w-6 shrink-0 ${
+        isCurrentPath(item.href) ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-600'
+      }`} />
+      {item.name}
+    </Link>
+  );
+
   return (
     <div className="min-h-full">
       {/* Mobile sidebar */}
@@ -76,13 +102,7 @@ const Layout = ({ children }) => {
                     <ul className="-mx-2 space-y-1">
                       {navigation.map((item) => (
                         <li key={item.name}>
-                          <a
-                            href={item.href}
-                            className="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 hover:text-primary-600 hover:bg-gray-50"
-                          >
-                            <item.icon className="h-6 w-6 shrink-0" />
-                            {item.name}
-                          </a>
+                          <NavLink item={item} mobile={true} />
                         </li>
                       ))}
                     </ul>
@@ -106,13 +126,7 @@ const Layout = ({ children }) => {
                 <ul className="-mx-2 space-y-1">
                   {navigation.map((item) => (
                     <li key={item.name}>
-                      <a
-                        href={item.href}
-                        className="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 hover:text-primary-600 hover:bg-gray-50"
-                      >
-                        <item.icon className="h-6 w-6 shrink-0" />
-                        {item.name}
-                      </a>
+                      <NavLink item={item} />
                     </li>
                   ))}
                 </ul>
