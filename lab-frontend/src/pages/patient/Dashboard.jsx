@@ -3,6 +3,10 @@ import { Routes, Route } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import PatientProfile from './Profile';
+import PatientExams from './PatientExams';
+import RequestExam from './RequestExam';
+import PatientResults from './PatientResults';
 import {
   ClipboardDocumentListIcon,
   BeakerIcon,
@@ -14,6 +18,7 @@ const PatientDashboard = () => {
   return (
     <Routes>
       <Route path="/" element={<PatientHome />} />
+      <Route path="/profile" element={<PatientProfile />} />
       <Route path="/exams" element={<PatientExams />} />
       <Route path="/request" element={<RequestExam />} />
       <Route path="/results" element={<PatientResults />} />
@@ -284,26 +289,6 @@ const PatientHome = () => {
   );
 };
 
-// Placeholder components para outras rotas
-const PatientExams = () => (
-  <div className="text-center py-8">
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">Meus Exames</h1>
-    <p className="text-gray-600">Página em desenvolvimento...</p>
-  </div>
-);
-
-const RequestExam = () => (
-  <div className="text-center py-8">
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">Solicitar Exame</h1>
-    <p className="text-gray-600">Página em desenvolvimento...</p>
-  </div>
-);
-
-const PatientResults = () => (
-  <div className="text-center py-8">
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">Meus Resultados</h1>
-    <p className="text-gray-600">Página em desenvolvimento...</p>
-  </div>
-);
+// Placeholder components para outras rotas - REMOVIDO já que agora temos as páginas reais
 
 export default PatientDashboard;

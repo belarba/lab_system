@@ -20,6 +20,7 @@ const Layout = ({ children }) => {
     // Navegação para pacientes
     ...(hasRole('patient') ? [
       { name: 'Dashboard', href: '/patient', icon: HomeIcon },
+      { name: 'Meu Perfil', href: '/patient/profile', icon: UserCircleIcon },
       { name: 'Meus Exames', href: '/patient/exams', icon: DocumentTextIcon },
       { name: 'Solicitar Exame', href: '/patient/request', icon: BeakerIcon },
       { name: 'Resultados', href: '/patient/results', icon: DocumentTextIcon },
