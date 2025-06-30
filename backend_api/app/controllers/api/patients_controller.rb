@@ -152,9 +152,21 @@ class Api::PatientsController < ApplicationController
   private
 
   def find_patient
-    User.joins(:roles)
-        .where(roles: { name: 'patient' })
-        .find_by(id: params[:patient_id])
+    # CORRIGIDO: usar :id em vez de :patient_id
+    patient_id = params[:id] || params[:patient_id]
+    puts "=== DEBUG find_patient ==="
+    puts "params[:id]: #{params[:id]}"
+    puts "params[:patient_id]: #{params[:patient_id]}"
+    puts "patient_id final: #{patient_id}"
+
+    patient = User.joins(:roles)
+                  .where(roles: { name: 'patient' })
+                  .find_by(id: patient_id)
+
+    puts "patient encontrado: #{patient&.id} - #{patient&.name}"
+    puts "=========================="
+
+    patient
   end
 
   def can_view_patient?(patient)

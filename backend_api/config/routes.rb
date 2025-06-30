@@ -23,9 +23,10 @@ Rails.application.routes.draw do
       end
     end
 
-    # Pacientes
-    resources :patients, only: [:show] do
+    # Pacientes - CORRIGIDO
+    resources :patients, only: [] do
       member do
+        get '/', to: 'patients#show'
         get :blood_work_requests
         get :test_results
       end
