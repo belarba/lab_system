@@ -156,6 +156,21 @@ const PatientResults = () => {
     }
   };
 
+  // Função auxiliar para formatar números
+  const formatNumber = (value, decimals = 1) => {
+    const num = parseFloat(value);
+    return isNaN(num) ? '0' : num.toFixed(decimals);
+  };
+
+  // Função auxiliar para formatar datas
+  const formatDate = (dateString) => {
+    try {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    } catch {
+      return 'Data inválida';
+    }
+  };
+
   // Preparar dados para gráfico do tipo selecionado
   const getChartData = (examTypeId) => {
     return results
@@ -193,7 +208,7 @@ const PatientResults = () => {
               <DocumentTextIcon className="h-8 w-8 text-gray-400" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Total de Resultados</p>
-                <p className="text-2xl font-bold text-gray-900">{summary.total_results}</p>
+                <p className="text-2xl font-bold text-gray-900">{summary.total_results || 0}</p>
               </div>
             </div>
           </div>
@@ -203,7 +218,7 @@ const PatientResults = () => {
               <CheckCircleIcon className="h-8 w-8 text-green-400" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Normais</p>
-                <p className="text-2xl font-bold text-green-900">{summary.normal_count}</p>
+                <p className="text-2xl font-bold text-green-900">{summary.normal_count || 0}</p>
               </div>
             </div>
           </div>
@@ -213,7 +228,7 @@ const PatientResults = () => {
               <ArrowTrendingUpIcon className="h-8 w-8 text-red-400" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Altos</p>
-                <p className="text-2xl font-bold text-red-900">{summary.high_count}</p>
+                <p className="text-2xl font-bold text-red-900">{summary.high_count || 0}</p>
               </div>
             </div>
           </div>
@@ -223,7 +238,7 @@ const PatientResults = () => {
               <ArrowTrendingDownIcon className="h-8 w-8 text-orange-400" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Baixos</p>
-                <p className="text-2xl font-bold text-orange-900">{summary.low_count}</p>
+                <p className="text-2xl font-bold text-orange-900">{summary.low_count || 0}</p>
               </div>
             </div>
           </div>
@@ -246,7 +261,7 @@ const PatientResults = () => {
               <option value="">Selecione um tipo de exame</option>
               {trends.map(trend => (
                 <option key={trend.exam_type.id} value={trend.exam_type.id}>
-                  {trend.exam_type.name} ({trend.results_count} resultados)
+                  {trend.exam_type.name} ({trend.results_count || 0} resultados)
                 </option>
               ))}
             </select>
@@ -257,6 +272,14 @@ const PatientResults = () => {
               const selectedTrend = trends.find(t => t.exam_type.id.toString() === selectedExamType);
               const chartData = getChartData(selectedExamType);
               
+              if (!selectedTrend) {
+                return (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-500">Dados do exame não encontrados</p>
+                  </div>
+                );
+              }
+              
               return (
                 <div className="space-y-4">
                   {/* Informações do exame selecionado */}
@@ -264,30 +287,40 @@ const PatientResults = () => {
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <p className="text-sm font-medium text-blue-900">Último Valor</p>
                       <p className="text-lg font-bold text-blue-900">
-                        {selectedTrend?.latest_value} {selectedTrend?.exam_type.unit}
+                        {selectedTrend.latest_value || 'N/A'} {selectedTrend.exam_type.unit || ''}
                       </p>
                       <p className="text-xs text-blue-600">
-                        {new Date(selectedTrend?.latest_date).toLocaleDateString('pt-BR')}
+                        {selectedTrend.latest_date ? formatDate(selectedTrend.latest_date) : 'N/A'}
                       </p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
                       <p className="text-sm font-medium text-green-900">Média</p>
                       <p className="text-lg font-bold text-green-900">
-                        {selectedTrend?.average_value.toFixed(1)} {selectedTrend?.exam_type.unit}
+                        {formatNumber(selectedTrend.average_value)} {selectedTrend.exam_type.unit || ''}
                       </p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <p className="text-sm font-medium text-gray-900">Total de Resultados</p>
-                      <p className="text-lg font-bold text-gray-900">{selectedTrend?.results_count}</p>
+                      <p className="text-lg font-bold text-gray-900">{selectedTrend.results_count || 0}</p>
                     </div>
                   </div>
 
                   {/* Gráfico */}
-                  <ResultsChart 
-                    data={chartData}
-                    examType={selectedTrend?.exam_type}
-                    title={`Tendência - ${selectedTrend?.exam_type.name}`}
-                  />
+                  {chartData.length > 0 ? (
+                    <ResultsChart 
+                      data={chartData}
+                      examType={selectedTrend.exam_type}
+                      title={`Tendência - ${selectedTrend.exam_type.name}`}
+                    />
+                  ) : (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg">
+                      <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">Dados insuficientes</h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Não há dados suficientes para gerar o gráfico de tendência
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })()
@@ -445,7 +478,7 @@ const PatientResults = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(result.performed_at).toLocaleDateString('pt-BR')}
+                      {formatDate(result.performed_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {result.lab_technician.name}

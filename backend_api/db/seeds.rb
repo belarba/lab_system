@@ -179,6 +179,20 @@ exam_requests_data = [
     patient: ana,
     doctor: luis,
     exam_type: glucose,
+    scheduled_date: 10.weeks.ago,
+    status: "completed"
+  },
+  {
+    patient: ana,
+    doctor: luis,
+    exam_type: cholesterol,
+    scheduled_date: 10.weeks.ago,
+    status: "completed"
+  },
+  {
+    patient: ana,
+    doctor: luis,
+    exam_type: glucose,
     scheduled_date: 3.days.from_now,
     status: "scheduled"
   },
