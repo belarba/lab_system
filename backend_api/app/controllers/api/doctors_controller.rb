@@ -203,7 +203,148 @@ class Api::DoctorsController < ApplicationController
     end
   end
 
+  def add_patient
+    doctor = find_doctor
+    return render_forbidden unless can_manage_patients?(doctor)
+
+    patient_email = params[:patient_email]&.strip&.downcase
+    return render json: { error: 'Email do paciente é obrigatório' }, status: :bad_request unless patient_email.present?
+
+    # Buscar paciente pelo email
+    patient = User.joins(:roles)
+                  .where(roles: { name: 'patient' })
+                  .find_by('LOWER(email) = ?', patient_email)
+
+    unless patient
+      return render json: { error: 'Paciente não encontrado com este email' }, status: :not_found
+    end
+
+    # Verificar se já não é paciente deste médico
+    if doctor.doctor_patients.include?(patient)
+      return render json: { error: 'Este paciente já está associado a você' }, status: :unprocessable_entity
+    end
+
+    # Criar uma requisição "virtual" para estabelecer a relação
+    # Vamos usar um tipo de exame padrão ou criar um tipo especial
+    default_exam_type = ExamType.find_or_create_by(name: 'Cadastro Inicial') do |et|
+      et.description = 'Tipo de exame usado para estabelecer relação médico-paciente'
+      et.unit = 'N/A'
+      et.reference_range = 'N/A'
+    end
+
+    begin
+      # Criar requisição inicial (pode ser cancelada imediatamente)
+      exam_request = ExamRequest.create!(
+        patient: patient,
+        doctor: doctor,
+        exam_type: default_exam_type,
+        scheduled_date: 1.day.from_now,
+        status: 'cancelled', # Já criar como cancelada
+        notes: 'Requisição automática para estabelecer relação médico-paciente'
+      )
+
+      render json: {
+        message: 'Paciente adicionado com sucesso',
+        patient: patient_response(patient, doctor)
+      }, status: :created
+
+    rescue => e
+      Rails.logger.error "Erro ao adicionar paciente: #{e.message}"
+      render json: { error: 'Erro interno ao adicionar paciente' }, status: :internal_server_error
+    end
+  end
+
+  def search_patients
+    doctor = find_doctor
+    return render_forbidden unless can_manage_patients?(doctor)
+
+    search_term = params[:search]&.strip
+    return render json: { error: 'Termo de busca é obrigatório' }, status: :bad_request unless search_term.present?
+
+    # Buscar pacientes que não são deste médico
+    existing_patient_ids = doctor.doctor_patients.pluck(:id)
+
+    patients = User.joins(:roles)
+                  .where(roles: { name: 'patient' })
+                  .where.not(id: existing_patient_ids)
+                  .where('LOWER(name) LIKE ? OR LOWER(email) LIKE ?',
+                          "%#{search_term.downcase}%",
+                          "%#{search_term.downcase}%")
+                  .limit(10)
+
+    render json: {
+      patients: patients.map { |patient|
+        {
+          id: patient.id,
+          name: patient.name,
+          email: patient.email,
+          phone: patient.phone
+        }
+      }
+    }, status: :ok
+  end
+
+  def remove_patient
+    doctor = find_doctor
+    return render_forbidden unless can_manage_patients?(doctor)
+
+    patient = User.joins(:roles)
+                  .where(roles: { name: 'patient' })
+                  .find_by(id: params[:patient_id])
+
+    unless patient
+      return render json: { error: 'Paciente não encontrado' }, status: :not_found
+    end
+
+    unless doctor.doctor_patients.include?(patient)
+      return render json: { error: 'Este paciente não está associado a você' }, status: :unprocessable_entity
+    end
+
+    # Verificar se tem exames não cancelados
+    active_requests = doctor.doctor_exam_requests
+                            .where(patient: patient)
+                            .where.not(status: 'cancelled')
+
+    if active_requests.any?
+      return render json: {
+        error: 'Não é possível remover paciente com exames ativos. Cancele os exames primeiro.',
+        active_requests_count: active_requests.count
+      }, status: :unprocessable_entity
+    end
+
+    # Cancelar todas as requisições restantes (se houver)
+    doctor.doctor_exam_requests
+          .where(patient: patient)
+          .update_all(status: 'cancelled', updated_at: Time.current)
+
+    render json: {
+      message: 'Paciente removido com sucesso'
+    }, status: :ok
+  end
+
   private
+
+  def can_manage_patients?(doctor)
+    current_user.admin? || current_user == doctor
+  end
+
+  def patient_response(patient, doctor)
+    recent_requests = patient.patient_exam_requests
+                            .where(doctor: doctor)
+                            .order(scheduled_date: :desc)
+                            .limit(5)
+
+    {
+      id: patient.id,
+      email: patient.email,
+      name: patient.name,
+      phone: patient.phone,
+      recent_requests_count: recent_requests.count,
+      last_request_date: recent_requests.first&.scheduled_date,
+      total_results: patient.patient_exam_requests.joins(:exam_result).where(doctor: doctor).count,
+      added_at: recent_requests.last&.created_at || Time.current
+    }
+  end
 
   def find_doctor
     User.joins(:roles)

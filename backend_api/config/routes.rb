@@ -15,15 +15,20 @@ Rails.application.routes.draw do
 
     # Médicos e seus pacientes
     resources :doctors, only: [] do
-      member do
-        get :patients
-        get :blood_work_requests
-        get 'export/patient/:patient_id', to: 'doctors#export_patient_results', as: :export_patient_results
-        get 'export/all', to: 'doctors#export_all_results', as: :export_all_results
-      end
-    end
+  member do
+    get :patients
+    get :blood_work_requests
+    get 'export/patient/:patient_id', to: 'doctors#export_patient_results', as: :export_patient_results
+    get 'export/all', to: 'doctors#export_all_results', as: :export_all_results
 
-    # Pacientes - CORRIGIDO
+    # NOVAS ROTAS para gerenciar pacientes
+    post :add_patient          # POST /api/doctors/:id/add_patient
+    get :search_patients       # GET /api/doctors/:id/search_patients?search=termo
+    delete 'patients/:patient_id', to: 'doctors#remove_patient', as: :remove_patient
+  end
+end
+
+    # Pacientes
     resources :patients, only: [] do
       member do
         get '/', to: 'patients#show'

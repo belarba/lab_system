@@ -32,8 +32,8 @@ const Layout = ({ children }) => {
     ...(hasRole('doctor') ? [
       { name: 'Dashboard', href: '/doctor', icon: HomeIcon },
       { name: 'Pacientes', href: '/doctor/patients', icon: UsersIcon },
-      { name: 'Exames', href: '/doctor/exams', icon: DocumentTextIcon },
-      { name: 'Resultados', href: '/doctor/results', icon: BeakerIcon },
+      { name: 'Solicitar Exames', href: '/doctor/exams', icon: BeakerIcon },
+      { name: 'Resultados', href: '/doctor/results', icon: DocumentTextIcon },
     ] : []),
     
     // Navegação para técnicos de laboratório
