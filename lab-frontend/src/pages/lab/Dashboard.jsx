@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -73,14 +73,14 @@ const LabHome = () => {
     {
       name: 'Upload Resultados',
       description: 'Faça upload de arquivos CSV com resultados',
-      href: '/lab/upload',
+      to: '/lab/upload',
       icon: DocumentArrowUpIcon,
       color: 'bg-blue-500 hover:bg-blue-600'
     },
     {
       name: 'Histórico Uploads',
       description: 'Visualize todos os uploads realizados',
-      href: '/lab/uploads',
+      to: '/lab/uploads',
       icon: FolderIcon,
       color: 'bg-green-500 hover:bg-green-600'
     }
@@ -193,14 +193,14 @@ const LabHome = () => {
         </div>
       )}
 
-      {/* Ações Rápidas */}
+      {/* Ações Rápidas - CORRIGIDO: usando Link ao invés de href */}
       <div>
         <h2 className="text-lg font-medium text-gray-900 mb-4">Ações Rápidas</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {quickActions.map((action) => (
-            <a
+            <Link
               key={action.name}
-              href={action.href}
+              to={action.to}
               className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
             >
               <div>
@@ -217,7 +217,7 @@ const LabHome = () => {
                   {action.description}
                 </p>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>
@@ -226,9 +226,9 @@ const LabHome = () => {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-gray-900">Uploads Recentes</h2>
-          <a href="/lab/uploads" className="text-sm text-primary-600 hover:text-primary-700">
+          <Link to="/lab/uploads" className="text-sm text-primary-600 hover:text-primary-700">
             Ver todos
-          </a>
+          </Link>
         </div>
         
         {recentUploads.length > 0 ? (
@@ -294,9 +294,9 @@ const LabHome = () => {
               Comece fazendo upload de arquivos com resultados laboratoriais.
             </p>
             <div className="mt-6">
-              <a href="/lab/upload" className="btn-primary">
+              <Link to="/lab/upload" className="btn-primary">
                 Fazer Upload
-              </a>
+              </Link>
             </div>
           </div>
         )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useApi } from '../../hooks/useApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -400,22 +401,22 @@ const DoctorPatients = () => {
                 )}
               </div>
 
-              {/* Ações Rápidas */}
+              {/* Ações Rápidas - CORRIGIDO: usando Link ao invés de href */}
               <div className="space-y-3">
-                <a
-                  href={`/doctor/exams?patient=${selectedPatient.id}`}
-                  className="w-full btn-primary text-center block"
+                <Link
+                  to={`/doctor/exams?patient=${selectedPatient.id}`}
+                  className="w-full btn-primary text-center block flex items-center justify-center"
                 >
-                  <DocumentTextIcon className="h-4 w-4 inline mr-2" />
+                  <DocumentTextIcon className="h-4 w-4 mr-2" />
                   Ver Exames
-                </a>
-                <a
-                  href={`/doctor/results?patient=${selectedPatient.id}`}
-                  className="w-full btn-secondary text-center block"
+                </Link>
+                <Link
+                  to={`/doctor/results?patient=${selectedPatient.id}`}
+                  className="w-full btn-secondary text-center block flex items-center justify-center"
                 >
-                  <ChartBarIcon className="h-4 w-4 inline mr-2" />
+                  <ChartBarIcon className="h-4 w-4 mr-2" />
                   Ver Resultados
-                </a>
+                </Link>
               </div>
 
               {/* Informações do Paciente */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -59,21 +59,21 @@ const AdminHome = () => {
     {
       name: 'Gerenciar Usuários',
       description: 'Adicionar, editar e remover usuários',
-      href: '/admin/users',
+      to: '/admin/users',
       icon: UsersIcon,
       color: 'bg-blue-500 hover:bg-blue-600'
     },
     {
       name: 'Tipos de Exame',
       description: 'Configurar tipos de exames disponíveis',
-      href: '/admin/exam-types',
+      to: '/admin/exam-types',
       icon: BeakerIcon,
       color: 'bg-green-500 hover:bg-green-600'
     },
     {
       name: 'Sistema',
       description: 'Monitorar performance e logs',
-      href: '/admin/system',
+      to: '/admin/system',
       icon: Cog6ToothIcon,
       color: 'bg-purple-500 hover:bg-purple-600'
     }
@@ -348,14 +348,14 @@ const AdminHome = () => {
         </div>
       )}
 
-      {/* Ações Rápidas */}
+      {/* Ações Rápidas - CORRIGIDO: usando Link ao invés de href */}
       <div>
         <h2 className="text-lg font-medium text-gray-900 mb-4">Ações Rápidas</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {quickActions.map((action) => (
-            <a
+            <Link
               key={action.name}
-              href={action.href}
+              to={action.to}
               className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
             >
               <div>
@@ -372,7 +372,7 @@ const AdminHome = () => {
                   {action.description}
                 </p>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>
