@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useApi } from '../../hooks/useApi';
 import LoadingSpinner from '../common/LoadingSpinner';
+import PatientSearch from './PatientSearch';
 import { BeakerIcon, CalendarIcon } from '@heroicons/react/24/outline';
 
 const RequestExamForm = ({ onSuccess, onCancel }) => {
@@ -9,10 +10,9 @@ const RequestExamForm = ({ onSuccess, onCancel }) => {
   const { request, loading } = useApi();
   
   const [examTypes, setExamTypes] = useState([]);
-  const [patients, setPatients] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const [formData, setFormData] = useState({
     exam_type_id: '',
-    patient_id: hasRole('patient') ? user?.id : '',
     scheduled_date: '',
     notes: ''
   });
@@ -28,22 +28,21 @@ const RequestExamForm = ({ onSuccess, onCancel }) => {
         setExamTypes(examTypesResponse.data.exam_types || []);
       }
 
-      // Se for médico, buscar pacientes
-      if (hasRole('doctor')) {
-        const patientsResponse = await request({ 
-          method: 'GET', 
-          url: `/doctors/${user.id}/patients` 
+      // Se for paciente, definir automaticamente
+      if (hasRole('patient')) {
+        setSelectedPatient({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone
         });
-        if (patientsResponse.data) {
-          setPatients(patientsResponse.data.patients || []);
-        }
       }
     } catch (error) {
       console.error('Erro ao buscar dados iniciais:', error);
     } finally {
       setLoadingData(false);
     }
-  }, [request, hasRole, user?.id]);
+  }, [request, hasRole, user]);
 
   useEffect(() => {
     fetchInitialData();
@@ -55,6 +54,11 @@ const RequestExamForm = ({ onSuccess, onCancel }) => {
     // Validações
     if (!formData.exam_type_id) {
       alert('Por favor, selecione um tipo de exame');
+      return;
+    }
+
+    if (!selectedPatient) {
+      alert('Por favor, selecione um paciente');
       return;
     }
 
@@ -84,7 +88,7 @@ const RequestExamForm = ({ onSuccess, onCancel }) => {
           url: '/blood_work_requests',
           data: {
             blood_work_request: {
-              patient_id: formData.patient_id,
+              patient_id: selectedPatient.id,
               exam_type_id: formData.exam_type_id,
               scheduled_date: formData.scheduled_date,
               notes: formData.notes
@@ -98,10 +102,13 @@ const RequestExamForm = ({ onSuccess, onCancel }) => {
         // Limpar formulário
         setFormData({
           exam_type_id: '',
-          patient_id: hasRole('patient') ? user?.id : '',
           scheduled_date: '',
           notes: ''
         });
+        // Limpar paciente selecionado apenas se for médico
+        if (hasRole('doctor')) {
+          setSelectedPatient(null);
+        }
       }
     } catch (error) {
       console.error('Erro ao solicitar exame:', error);
@@ -114,6 +121,10 @@ const RequestExamForm = ({ onSuccess, onCancel }) => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handlePatientSelect = (patient) => {
+    setSelectedPatient(patient);
   };
 
   if (loadingData) {
@@ -141,25 +152,20 @@ const RequestExamForm = ({ onSuccess, onCancel }) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Seleção de Paciente (apenas para médicos) */}
         {hasRole('doctor') && (
-          <div>
-            <label htmlFor="patient_id" className="block text-sm font-medium text-gray-700 mb-2">
-              Paciente *
-            </label>
-            <select
-              id="patient_id"
-              name="patient_id"
-              value={formData.patient_id}
-              onChange={handleChange}
-              required
-              className="input-field"
-            >
-              <option value="">Selecione um paciente</option>
-              {patients.map(patient => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.name} - {patient.email}
-                </option>
-              ))}
-            </select>
+          <PatientSearch
+            onPatientSelect={handlePatientSelect}
+            selectedPatient={selectedPatient}
+          />
+        )}
+
+        {/* Informação do paciente para pacientes */}
+        {hasRole('patient') && (
+          <div className="bg-blue-50 p-4 rounded-md">
+            <h4 className="text-sm font-medium text-blue-900 mb-2">Solicitando para:</h4>
+            <div className="text-sm text-blue-700">
+              <div className="font-medium">{user.name}</div>
+              <div>{user.email}</div>
+            </div>
           </div>
         )}
 
@@ -183,6 +189,23 @@ const RequestExamForm = ({ onSuccess, onCancel }) => {
               </option>
             ))}
           </select>
+          
+          {/* Informações do tipo de exame selecionado */}
+          {formData.exam_type_id && (
+            <div className="mt-2 p-3 bg-gray-50 rounded-md">
+              {(() => {
+                const selectedType = examTypes.find(t => t.id.toString() === formData.exam_type_id);
+                return selectedType ? (
+                  <div className="text-sm text-gray-600">
+                    <div><strong>Unidade:</strong> {selectedType.unit}</div>
+                    {selectedType.reference_range && (
+                      <div><strong>Faixa de Referência:</strong> {selectedType.reference_range}</div>
+                    )}
+                  </div>
+                ) : null;
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Data Agendada */}
@@ -222,18 +245,26 @@ const RequestExamForm = ({ onSuccess, onCancel }) => {
           />
         </div>
 
-        {/* Informações importantes para pacientes */}
-        {hasRole('patient') && (
-          <div className="bg-blue-50 p-4 rounded-md">
-            <h4 className="text-sm font-medium text-blue-900 mb-2">Informações Importantes:</h4>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Você pode solicitar o mesmo tipo de exame apenas uma vez por semana</li>
-              <li>• O exame será atribuído automaticamente a um médico disponível</li>
-              <li>• Você pode cancelar até 3 horas antes do horário agendado</li>
-              <li>• Você receberá os resultados assim que estiverem prontos</li>
-            </ul>
-          </div>
-        )}
+        {/* Informações importantes */}
+        <div className="bg-blue-50 p-4 rounded-md">
+          <h4 className="text-sm font-medium text-blue-900 mb-2">Informações Importantes:</h4>
+          <ul className="text-sm text-blue-700 space-y-1">
+            {hasRole('patient') ? (
+              <>
+                <li>• Você pode solicitar o mesmo tipo de exame apenas uma vez por semana</li>
+                <li>• O exame será atribuído automaticamente a um médico disponível</li>
+                <li>• Você pode cancelar até 3 horas antes do horário agendado</li>
+              </>
+            ) : (
+              <>
+                <li>• Selecione qualquer paciente registrado no sistema</li>
+                <li>• O paciente será notificado sobre a solicitação</li>
+                <li>• Você pode cancelar ou modificar a solicitação se necessário</li>
+              </>
+            )}
+            <li>• Os resultados estarão disponíveis assim que processados pelo laboratório</li>
+          </ul>
+        </div>
 
         {/* Botões */}
         <div className="flex justify-end space-x-3 pt-4">
@@ -249,7 +280,7 @@ const RequestExamForm = ({ onSuccess, onCancel }) => {
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (hasRole('doctor') && !selectedPatient)}
             className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {loading ? (
