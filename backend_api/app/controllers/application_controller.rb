@@ -1,4 +1,7 @@
 class ApplicationController < ActionController::API
+  # Adicionar suporte para respond_to em APIs Rails
+  include ActionController::MimeResponds
+
   # Desabilitar proteção CSRF para API
   # protect_from_forgery with: :null_session
 

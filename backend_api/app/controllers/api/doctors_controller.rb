@@ -180,28 +180,17 @@ class Api::DoctorsController < ApplicationController
       end
     end
 
-    # Responder com CSV
-    respond_to do |format|
-      format.csv do
-        filename = "patient_results_#{patient.name.parameterize}_#{Date.current}.csv"
-        send_data csv_data,
-                  filename: filename,
-                  type: 'text/csv',
-                  disposition: 'attachment'
-      end
-      format.json do
-        render json: {
-          message: 'CSV data generated successfully',
-          csv_data: csv_data,
-          results_count: results.count,
-          patient: {
-            id: patient.id,
-            name: patient.name,
-            email: patient.email
-          }
-        }
-      end
-    end
+    # Sempre retornar JSON para API
+    render json: {
+      message: 'CSV data generated successfully',
+      csv_data: csv_data,
+      results_count: results.count,
+      patient: {
+        id: patient.id,
+        name: patient.name,
+        email: patient.email
+      }
+    }
   end
 
   def export_all_results
@@ -259,23 +248,13 @@ class Api::DoctorsController < ApplicationController
       end
     end
 
-    respond_to do |format|
-      format.csv do
-        filename = "all_patient_results_#{@doctor.name.parameterize}_#{Date.current}.csv"
-        send_data csv_data,
-                  filename: filename,
-                  type: 'text/csv',
-                  disposition: 'attachment'
-      end
-      format.json do
-        render json: {
-          message: 'CSV data generated successfully',
-          csv_data: csv_data,
-          results_count: results.count,
-          doctor: user_response(@doctor)
-        }
-      end
-    end
+    # Sempre retornar JSON para API
+    render json: {
+      message: 'CSV data generated successfully',
+      csv_data: csv_data,
+      results_count: results.count,
+      doctor: user_response(@doctor)
+    }
   end
 
   private

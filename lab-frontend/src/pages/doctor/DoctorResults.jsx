@@ -30,7 +30,8 @@ const DoctorResults = () => {
   const [patientTrends, setPatientTrends] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [loadingTrends, setLoadingTrends] = useState(false);
-  const [exportingCSV, setExportingCSV] = useState(false);
+  const [exportingPatient, setExportingPatient] = useState(false);
+  const [exportingAll, setExportingAll] = useState(false);
   
   // Estados de filtro
   const [filters, setFilters] = useState({
@@ -194,7 +195,11 @@ const DoctorResults = () => {
 
   const exportToCSV = async (type = 'filtered') => {
     try {
-      setExportingCSV(true);
+      if (type === 'patient') {
+        setExportingPatient(true);
+      } else {
+        setExportingAll(true);
+      }
 
       let url;
       const params = new URLSearchParams();
@@ -244,7 +249,11 @@ const DoctorResults = () => {
       console.error('Erro ao exportar CSV:', error);
       alert('Erro ao exportar CSV');
     } finally {
-      setExportingCSV(false);
+      if (type === 'patient') {
+        setExportingPatient(false);
+      } else {
+        setExportingAll(false);
+      }
     }
   };
 
@@ -313,10 +322,10 @@ const DoctorResults = () => {
           {selectedPatient && (
             <button
               onClick={() => exportToCSV('patient')}
-              disabled={exportingCSV}
+              disabled={exportingPatient}
               className="btn-secondary flex items-center"
             >
-              {exportingCSV ? (
+              {exportingPatient ? (
                 <LoadingSpinner size="sm" className="mr-2" />
               ) : (
                 <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
@@ -326,10 +335,10 @@ const DoctorResults = () => {
           )}
           <button
             onClick={() => exportToCSV('all')}
-            disabled={exportingCSV}
+            disabled={exportingAll}
             className="btn-primary flex items-center"
           >
-            {exportingCSV ? (
+            {exportingAll ? (
               <LoadingSpinner size="sm" className="mr-2" />
             ) : (
               <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
@@ -479,6 +488,81 @@ const DoctorResults = () => {
           </div>
         )}
       </div>
+
+      {/* Gráfico de Tendências do Paciente Selecionado */}
+      {selectedPatient && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <ChartBarIcon className="h-6 w-6 text-primary-600 mr-2" />
+              <h2 className="text-xl font-semibold text-gray-900">
+                Tendências - {selectedPatient.name}
+              </h2>
+            </div>
+          </div>
+
+          {loadingTrends ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner size="lg" />
+            </div>
+          ) : patientTrends.length > 0 ? (
+            <div className="space-y-6">
+              {patientTrends.map(trend => {
+                // Verificar se os dados necessários existem
+                if (!trend || !trend.exam_type || !trend.values_over_time) {
+                  return null;
+                }
+
+                const chartData = (trend.values_over_time || []).map(item => ({
+                  date: item.date,
+                  value: parseFloat(item.value) || 0,
+                  status: item.status,
+                  performed_at: item.date
+                }));
+
+                return (
+                  <div key={trend.exam_type.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-blue-900">Último Valor</p>
+                        <p className="text-lg font-bold text-blue-900">
+                          {formatNumber(trend.latest_value)} {trend.exam_type.unit}
+                        </p>
+                        <p className="text-xs text-blue-600">
+                          {trend.latest_date ? new Date(trend.latest_date).toLocaleDateString('pt-BR') : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-green-900">Média</p>
+                        <p className="text-lg font-bold text-green-900">
+                          {formatNumber(trend.average_value)} {trend.exam_type.unit}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-gray-900">Total de Resultados</p>
+                        <p className="text-lg font-bold text-gray-900">{trend.results_count || 0}</p>
+                      </div>
+                    </div>
+                    <ResultsChart 
+                      data={chartData}
+                      examType={trend.exam_type}
+                      title={`${trend.exam_type.name} - Evolução`}
+                    />
+                  </div>
+                );
+              }).filter(Boolean)}
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Sem dados para tendências</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Este paciente ainda não possui resultados suficientes para gerar gráficos de tendência
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Lista de Resultados */}
       {currentResults.length > 0 ? (
