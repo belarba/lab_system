@@ -3,6 +3,9 @@ import { Routes, Route } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import AdminUsers from './AdminUsers';
+import AdminExamTypes from './AdminExamTypes';
+import AdminSystem from './AdminSystem';
 import {
   UsersIcon,
   BeakerIcon,
@@ -393,27 +396,5 @@ const AdminHome = () => {
     </div>
   );
 };
-
-// Placeholder components para outras rotas
-const AdminUsers = () => (
-  <div className="text-center py-8">
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">Gerenciar Usuários</h1>
-    <p className="text-gray-600">Página em desenvolvimento...</p>
-  </div>
-);
-
-const AdminExamTypes = () => (
-  <div className="text-center py-8">
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">Tipos de Exame</h1>
-    <p className="text-gray-600">Página em desenvolvimento...</p>
-  </div>
-);
-
-const AdminSystem = () => (
-  <div className="text-center py-8">
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">Sistema</h1>
-    <p className="text-gray-600">Página em desenvolvimento...</p>
-  </div>
-);
 
 export default AdminDashboard;

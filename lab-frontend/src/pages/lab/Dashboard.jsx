@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import UploadResults from './UploadResults';
+import UploadHistory from './UploadHistory';
 import {
   DocumentArrowUpIcon,
   FolderIcon,
@@ -302,20 +304,5 @@ const LabHome = () => {
     </div>
   );
 };
-
-// Placeholder components para outras rotas
-const UploadResults = () => (
-  <div className="text-center py-8">
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">Upload de Resultados</h1>
-    <p className="text-gray-600">Página em desenvolvimento...</p>
-  </div>
-);
-
-const UploadHistory = () => (
-  <div className="text-center py-8">
-    <h1 className="text-2xl font-bold text-gray-900 mb-4">Histórico de Uploads</h1>
-    <p className="text-gray-600">Página em desenvolvimento...</p>
-  </div>
-);
 
 export default LabDashboard;
