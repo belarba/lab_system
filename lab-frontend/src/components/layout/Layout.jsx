@@ -10,7 +10,11 @@ import {
   UsersIcon,
   DocumentTextIcon,
   Cog6ToothIcon,
-  BeakerIcon
+  BeakerIcon,
+  HeartIcon,
+  UserIcon,
+  ClipboardDocumentListIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 const Layout = ({ children }) => {
@@ -21,7 +25,7 @@ const Layout = ({ children }) => {
   const navigation = [
     // Navegação para pacientes
     ...(hasRole('patient') ? [
-      { name: 'Dashboard', href: '/patient', icon: HomeIcon },
+      { name: 'Dashboard Paciente', href: '/patient', icon: HeartIcon },
       { name: 'Meu Perfil', href: '/patient/profile', icon: UserCircleIcon },
       { name: 'Meus Exames', href: '/patient/exams', icon: DocumentTextIcon },
       { name: 'Solicitar Exame', href: '/patient/request', icon: BeakerIcon },
@@ -30,7 +34,7 @@ const Layout = ({ children }) => {
     
     // Navegação para médicos
     ...(hasRole('doctor') ? [
-      { name: 'Dashboard', href: '/doctor', icon: HomeIcon },
+      { name: 'Dashboard Médico', href: '/doctor', icon: UserIcon },
       { name: 'Pacientes', href: '/doctor/patients', icon: UsersIcon },
       { name: 'Solicitar Exames', href: '/doctor/exams', icon: BeakerIcon },
       { name: 'Resultados', href: '/doctor/results', icon: DocumentTextIcon },
@@ -38,14 +42,14 @@ const Layout = ({ children }) => {
     
     // Navegação para técnicos de laboratório
     ...(hasRole('lab_technician') ? [
-      { name: 'Dashboard', href: '/lab', icon: HomeIcon },
+      { name: 'Dashboard Lab', href: '/lab', icon: ClipboardDocumentListIcon },
       { name: 'Upload Resultados', href: '/lab/upload', icon: DocumentTextIcon },
       { name: 'Histórico Uploads', href: '/lab/uploads', icon: BeakerIcon },
     ] : []),
     
     // Navegação para administradores
     ...(hasRole('admin') ? [
-      { name: 'Dashboard', href: '/admin', icon: HomeIcon },
+      { name: 'Dashboard Admin', href: '/admin', icon: ChartBarIcon },
       { name: 'Usuários', href: '/admin/users', icon: UsersIcon },
       { name: 'Tipos de Exame', href: '/admin/exam-types', icon: BeakerIcon },
       { name: 'Sistema', href: '/admin/system', icon: Cog6ToothIcon },
