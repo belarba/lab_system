@@ -92,7 +92,7 @@ Sistema completo para gestão de exames laboratoriais com diferentes perfis de u
 
   
 
-🐳 Setup com Docker (Recomendado)
+🐳 Setup com Docker
 
 ---------------
 
@@ -105,17 +105,17 @@ Sistema completo para gestão de exames laboratoriais com diferentes perfis de u
 
 1.Clone o repositório
 ```
-bashgit clone <url-do-repo>
+git clone <url-do-repo>
 cd <nome-do-projeto>
 ```
 2.Execute o script de setup
 ```
-bashchmod +x scripts/docker-setup.sh
+chmod +x scripts/docker-setup.sh
 ./scripts/docker-setup.sh
 ```
 3.Inicie os serviços
 ```
-bashdocker-compose up -d
+docker-compose up -d
 ```
 4.Acesse a aplicação
 
