@@ -13,6 +13,10 @@ Sistema completo para gestão de exames laboratoriais com diferentes perfis de u
 
 *  **Banco de Dados**: PostgreSQL
 
+*	 **Load Balancer**: Nginx
+
+*  **Containerização**: Docker + Docker Compose
+
 *  **Autenticação**: JWT com refresh tokens
 
 *  **Styling**: Tailwind CSS
@@ -88,7 +92,101 @@ Sistema completo para gestão de exames laboratoriais com diferentes perfis de u
 
   
 
-🚀 Como Iniciar
+🐳 Setup com Docker (Recomendado)
+
+---------------
+
+###  Pré-requisitos
+
+* Docker 20.0+
+* Docker Compose 2.0+
+
+### 🚀 Início Rápido
+
+1.Clone o repositório
+```
+bashgit clone <url-do-repo>
+cd <nome-do-projeto>
+```
+2.Execute o script de setup
+```
+bashchmod +x scripts/docker-setup.sh
+./scripts/docker-setup.sh
+```
+3.Inicie os serviços
+```
+bashdocker-compose up -d
+```
+4.Acesse a aplicação
+
+
+Frontend: `http://localhost:5173`
+API (Load Balanced): `http://localhost:9999`
+Backend 1: `http://localhost:3001`
+Backend 2: `http://localhost:3002`
+
+### 🛠️ Comandos de Desenvolvimento
+```
+# Usar script helper
+chmod +x scripts/docker-dev.sh
+
+# Iniciar ambiente
+./scripts/docker-dev.sh start
+
+# Ver logs
+./scripts/docker-dev.sh logs
+
+# Rails console
+./scripts/docker-dev.sh console
+
+# Executar testes
+./scripts/docker-dev.sh test
+
+# Resetar banco
+./scripts/docker-dev.sh reset
+```
+
+### 📊 Arquitetura Docker
+┌─────────────────┐    ┌──────────────┐
+│   Frontend      │    │    Nginx     │
+│   (React+Vite)  │    │ Load Balancer│
+│   Port: 5173    │    │  Port: 9999  │
+└─────────────────┘    └──────┬───────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │                   │
+            ┌───────▼────┐    ┌─────────▼──┐
+            │ Backend 01 │    │ Backend 02 │
+            │Rails API   │    │Rails API   │
+            │Port: 3001  │    │Port: 3002  │
+            └─────┬──────┘    └─────┬──────┘
+                  │                 │
+                  └─────────┬───────┘
+                            │
+                    ┌───────▼────┐
+                    │PostgreSQL  │
+                    │Port: 5432  │
+                    └────────────┘
+
+### 🔧 Configuração Personalizada
+
+Variáveis de Ambiente (`.env` na raiz):
+```
+# Rails
+RAILS_MASTER_KEY=your-master-key-here
+RAILS_ENV=development
+
+# Database  
+DATABASE_HOST=db
+DATABASE_USERNAME=lab
+DATABASE_PASSWORD=lab123
+
+# Frontend
+VITE_API_BASE_URL=http://localhost:9999
+```
+
+🚀 Setup Manual (Sem Docker)
+
 
 ---------------
 
@@ -481,4 +579,3 @@ Build de produção:
 
 * Confirme se os tipos de exame existem no sistema
 
- 

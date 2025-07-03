@@ -1,0 +1,106 @@
+services:
+  backend01: &api
+    build: ./backend_api
+    hostname: backend01
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_USERNAME=lab
+      - DATABASE_PASSWORD=lab123
+      - RAILS_ENV=development
+      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+      - RAILS_LOG_TO_STDOUT=true
+    ports:
+      - "3001:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend_api:/app
+      - bundle_cache:/usr/local/bundle
+    command: >
+      bash -c "
+        rm -f tmp/pids/server.pid &&
+        bundle exec rails server -b 0.0.0.0 -p 3000
+      "
+    deploy:
+      resources:
+        limits:
+          cpus: "0.6"
+          memory: "200MB"
+    restart: unless-stopped
+
+  backend02:
+    <<: *api
+    hostname: backend02
+    ports:
+      - "3002:3000"
+
+  frontend:
+    build: ./lab-frontend
+    hostname: frontend
+    environment:
+      - VITE_API_BASE_URL=http://localhost:9999
+      - CHOKIDAR_USEPOLLING=true
+    ports:
+      - "5173:5173"
+    depends_on:
+      - nginx
+    volumes:
+      - ./lab-frontend:/app
+      - node_modules_cache:/app/node_modules
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "100MB"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend01
+      - backend02
+    ports:
+      - "9999:9999"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.17"
+          memory: "10MB"
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    hostname: db
+    environment:
+      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=lab_system
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.13"
+          memory: "140MB"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  bundle_cache:
+  node_modules_cache:
+
+networks:
+  default:
+    driver: bridge
+    name: lab-system-network
