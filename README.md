@@ -90,7 +90,10 @@ Sistema completo para gestão de exames laboratoriais com diferentes perfis de u
 
 * Gerenciamento de roles
 
-  
+
+&nbsp;
+
+&nbsp;
 
 🐳 Setup com Docker
 
@@ -105,17 +108,17 @@ Sistema completo para gestão de exames laboratoriais com diferentes perfis de u
 
 1.Clone o repositório
 ```
-git clone <url-do-repo>
-cd <nome-do-projeto>
+	git clone <url-do-repo>
+	cd <nome-do-projeto>
 ```
 2.Execute o script de setup
 ```
-chmod +x scripts/docker-setup.sh
-./scripts/docker-setup.sh
+	chmod +x scripts/docker-setup.sh
+	./scripts/docker-setup.sh
 ```
 3.Inicie os serviços
 ```
-docker-compose up -d
+	docker-compose up -d
 ```
 4.Acesse a aplicação
 
@@ -147,6 +150,7 @@ chmod +x scripts/docker-dev.sh
 ```
 
 ### 📊 Arquitetura Docker
+```
 ┌─────────────────┐    ┌──────────────┐
 │   Frontend      │    │    Nginx     │
 │   (React+Vite)  │    │ Load Balancer│
@@ -167,6 +171,7 @@ chmod +x scripts/docker-dev.sh
                     │PostgreSQL  │
                     │Port: 5432  │
                     └────────────┘
+```
 
 ### 🔧 Configuração Personalizada
 
@@ -184,6 +189,9 @@ DATABASE_PASSWORD=lab123
 # Frontend
 VITE_API_BASE_URL=http://localhost:9999
 ```
+
+&nbsp;
+&nbsp;
 
 🚀 Setup Manual (Sem Docker)
 
@@ -325,7 +333,8 @@ O backend estará rodando em: `http://localhost:3000`
 
 O frontend estará rodando em: `http://localhost:5173`
 
-  
+
+  &nbsp;
 
 👤 Usuários de Teste
 
@@ -343,6 +352,7 @@ Após executar `rails db:seed`, você terá os seguintes usuários disponíveis:
 | Lab Tech | mariorodas@lusagua.pt | password123 | Pode fazer upload de resultados |
 
   
+&nbsp;
 
 🧪 Executar Testes
 
@@ -370,6 +380,7 @@ Após executar `rails db:seed`, você terá os seguintes usuários disponíveis:
 ---------------------------
 
   
+&nbsp;
 
 ###  Autenticação
 
@@ -418,11 +429,12 @@ Após executar `rails db:seed`, você terá os seguintes usuários disponíveis:
 * `GET /api/admin/stats` - Estatísticas do sistema
 
   
+&nbsp;
 
 📁 Estrutura do Projeto
 
 -----------------------
-
+```
 ├── backend_api/              # Rails API  
 │   ├── app/  
 │   │   ├── controllers/      # Controllers da API  
@@ -440,8 +452,10 @@ Após executar `rails db:seed`, você terá os seguintes usuários disponíveis:
 │   │   ├── contexts/       # Context providers  
 │   │   └── services/       # API client  
 │   └── public/             # Assets estáticos  
-  
-  
+```
+
+&nbsp;
+
 
 🔒 Segurança
 
@@ -460,6 +474,7 @@ Após executar `rails db:seed`, você terá os seguintes usuários disponíveis:
 * Rate limiting (configurável)
 
   
+&nbsp;
 
 📊 Funcionalidades Técnicas
 
@@ -477,7 +492,7 @@ Após executar `rails db:seed`, você terá os seguintes usuários disponíveis:
 
 *  **Testes**: Cobertura de testes unitários e de integração
 
-  
+&nbsp;
 
 🛠️ Desenvolvimento
 
@@ -522,6 +537,7 @@ Após executar `rails db:seed`, você terá os seguintes usuários disponíveis:
 ```
 
   
+&nbsp;
 
 🚀 Deploy
 
@@ -549,7 +565,9 @@ Build de produção:
 	npm run build
 ```
 
-  
+
+&nbsp;
+
 
 🐛 Solução de Problemas
 
