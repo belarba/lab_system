@@ -325,23 +325,23 @@ Após executar `rails db:seed`, você terá os seguintes usuários disponíveis:
 
 -----------------------
 
-  ├── backend_api/              # Rails API
-│   ├── app/
-│   │   ├── controllers/      # Controllers da API
-│   │   ├── models/          # Models do Rails
-│   │   └── services/        # Services (CSV import, JWT)
-│   ├── config/              # Configurações
-│   ├── db/                  # Migrações e seeds
-│   └── spec/                # Testes RSpec
-│
-├── lab-frontend/            # React App
-│   ├── src/
-│   │   ├── components/      # Componentes React
-│   │   ├── pages/          # Páginas por perfil
-│   │   ├── hooks/          # Custom hooks
-│   │   ├── contexts/       # Context providers
-│   │   └── services/       # API client
-│   └── public/             # Assets estáticos
+├── backend_api/              # Rails API  
+│   ├── app/  
+│   │   ├── controllers/      # Controllers da API  
+│   │   ├── models/          # Models do Rails  
+│   │   └── services/        # Services (CSV import, JWT)  
+│   ├── config/              # Configurações  
+│   ├── db/                  # Migrações e seeds  
+│   └── spec/                # Testes RSpec  
+│  
+├── lab-frontend/            # React App  
+│   ├── src/  
+│   │   ├── components/      # Componentes React  
+│   │   ├── pages/          # Páginas por perfil  
+│   │   ├── hooks/          # Custom hooks  
+│   │   ├── contexts/       # Context providers  
+│   │   └── services/       # API client  
+│   └── public/             # Assets estáticos  
   
   
 
