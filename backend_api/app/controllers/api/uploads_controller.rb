@@ -6,30 +6,25 @@ class Api::UploadsController < ApplicationController
     # Apenas lab technicians e admins podem ver uploads
     return render_forbidden unless current_user.lab_technician? || current_user.admin?
 
-    uploads = LabFileUpload.includes(:uploaded_by)
+    @uploads = LabFileUpload.includes(:uploaded_by)
                            .recent
                            .limit(params[:limit] || 50)
                            .offset(params[:offset] || 0)
 
     # Filtrar por status se especificado
-    uploads = uploads.by_status(params[:status]) if params[:status].present?
+    @uploads = @uploads.by_status(params[:status]) if params[:status].present?
 
-    render json: {
-      uploads: uploads.map { |upload| upload_response(upload) },
-      pagination: {
-        limit: params[:limit] || 50,
-        offset: params[:offset] || 0,
-        total: LabFileUpload.count
-      }
-    }, status: :ok
+    @limit = params[:limit] || 50
+    @offset = params[:offset] || 0
+    @total = LabFileUpload.count
+
+    render 'api/uploads/index'
   end
 
   def show
     return render_forbidden unless can_view_upload?(@upload)
 
-    render json: {
-      upload: detailed_upload_response(@upload)
-    }, status: :ok
+    render 'api/uploads/show'
   end
 
   def create
@@ -78,7 +73,7 @@ class Api::UploadsController < ApplicationController
       end
 
       # Criar registro de upload
-      upload = LabFileUpload.create!(
+      @upload = LabFileUpload.create!(
         filename: filename,
         file_size: file_size,
         uploaded_by: current_user,
@@ -86,12 +81,9 @@ class Api::UploadsController < ApplicationController
       )
 
       # Processar CSV
-      CsvImportService.new(upload, file_content).process
+      CsvImportService.new(@upload, file_content).process
 
-      render json: {
-        message: 'File uploaded and processed successfully',
-        upload: upload_response(upload.reload)
-      }, status: :created
+      render 'api/uploads/create', status: :created
 
     rescue => e
       Rails.logger.error "Upload failed: #{e.message}"
@@ -114,43 +106,11 @@ class Api::UploadsController < ApplicationController
     current_user.admin? || current_user == upload.uploaded_by
   end
 
-  def upload_response(upload)
-    {
-      id: upload.id,
-      filename: upload.filename,
-      file_size: upload.file_size,
-      status: upload.status,
-      uploaded_by: {
-        id: upload.uploaded_by.id,
-        name: upload.uploaded_by.name,
-        email: upload.uploaded_by.email
-      },
-      total_records: upload.total_records,
-      processed_records: upload.processed_records,
-      failed_records: upload.failed_records,
-      success_rate: upload.success_rate,
-      processed_at: upload.processed_at,
-      created_at: upload.created_at,
-      updated_at: upload.updated_at
-    }
-  end
-
-  def detailed_upload_response(upload)
-    response = upload_response(upload)
-    response.merge({
-      error_details: upload.error_details,
-      processing_summary: upload.processing_summary_data,
-      records_summary: {
-        total: upload.total_records,
-        processed: upload.processed_records,
-        failed: upload.failed_records,
-        pending: upload.total_records - upload.processed_records - upload.failed_records,
-        success_rate: upload.success_rate
-      }
-    })
-  end
-
   def render_not_found(message)
     render json: { error: message }, status: :not_found
+  end
+
+  def render_forbidden
+    render json: { error: 'Forbidden' }, status: :forbidden
   end
 end
