@@ -4,15 +4,11 @@ class Api::AuthController < ApplicationController
   skip_before_action :authenticate_request, only: [:login, :refresh]
 
   def login
-    user = User.find_by(email: params[:email])
+    @user = User.find_by(email: params[:email])
 
-    if user&.authenticate(params[:password])
-      tokens = user.generate_tokens
-      render json: {
-        message: "Login successful",
-        user: user_response(user),
-        **tokens
-      }, status: :ok
+    if @user&.authenticate(params[:password])
+      @tokens = @user.generate_tokens
+      render 'api/auth/login'
     else
       render json: { error: "Invalid credentials" }, status: :unauthorized
     end
@@ -30,18 +26,14 @@ class Api::AuthController < ApplicationController
     token_record = RefreshToken.active.find_by(token: refresh_token)
     return render json: { error: "Invalid or expired refresh token" }, status: :unauthorized unless token_record
 
-    user = token_record.user
+    @user = token_record.user
 
     # Revogar o token antigo
     token_record.destroy
 
     # Gerar novos tokens
-    tokens = user.generate_tokens
-    render json: {
-      message: "Token refreshed",
-      user: user_response(user),
-      **tokens
-    }, status: :ok
+    @tokens = @user.generate_tokens
+    render 'api/auth/refresh'
   end
 
   def logout
@@ -55,17 +47,6 @@ class Api::AuthController < ApplicationController
       current_user.revoke_all_tokens
     end
 
-    render json: { message: "Logged out successfully" }, status: :ok
-  end
-
-  private
-
-  def user_response(user)
-    {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      roles: user.roles.pluck(:name)
-    }
+    render 'api/auth/logout'
   end
 end
