@@ -1,4 +1,3 @@
-# config/routes.rb
 Rails.application.routes.draw do
   namespace :api do
     # Autenticação
@@ -29,7 +28,7 @@ Rails.application.routes.draw do
       end
     end
 
-    # Pacientes - CORRIGIDO
+    # Pacientes
     resources :patients, only: [] do
       member do
         get '/', to: 'patients#show'
@@ -60,36 +59,12 @@ Rails.application.routes.draw do
     # Lab File Uploads
     resources :uploads, only: [:index, :create, :show]
 
-    # Admin endpoints
-    scope :admin do
-      # User management
-      resources :users, controller: 'admin', only: [] do
-        collection do
-          get '/', action: :users
-          post '/', action: :create_user
-        end
-        member do
-          get '/', action: :show_user
-          put '/', action: :update_user
-          delete '/', action: :destroy_user
-        end
-      end
-
-      # Exam types management
-      resources :exam_types, controller: 'admin', only: [] do
-        collection do
-          get '/', action: :exam_types
-          post '/', action: :create_exam_type
-        end
-        member do
-          put '/', action: :update_exam_type
-          delete '/', action: :destroy_exam_type
-        end
-      end
-
-      # System stats and roles
-      get :stats, to: 'admin#system_stats'
-      get :roles, to: 'admin#roles'
+    # Admin namespace - seguindo convenções REST
+    namespace :admin do
+      resources :users
+      resources :exam_types
+      resources :stats, only: [:index]
+      resources :roles, only: [:index]
     end
 
     # Public exam types endpoint (for patients to see available types)
