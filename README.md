@@ -608,37 +608,37 @@ Build de produção:
 **Curto Prazo**
 
 Backend:
-* Implementar rate limiting para APIs de autenticação *
-* Adicionar validação de força de senha no registro/update *
-* Implementar permissões específicas por endpoint *
-* Adicionar logs de auditoria para todas as operações sensíveis *
-* Implementar rotação automática de tokens JWT *
-* Implementar monitoramento (healthchecks, métricas) *
-* Setup de CI/CD pipeline completo *
+* Implementar rate limiting para APIs de autenticação 
+* Adicionar validação de força de senha no registro/update 
+* Implementar permissões específicas por endpoint 
+* Adicionar logs de auditoria para todas as operações sensíveis 
+* Implementar rotação automática de tokens JWT 
+* Implementar monitoramento (healthchecks, métricas) 
+* Setup de CI/CD pipeline completo 
 
 Frontend:
-* Aumentar cobertura de testes (target: 80%+) *
-* Adicionar testes de integração *
-* Implementar error boundaries *
-* Melhorar tratamento de erros da API *
+* Aumentar cobertura de testes (target: 80%+) 
+* Adicionar testes de integração 
+* Implementar error boundaries 
+* Melhorar tratamento de erros da API 
 
 
 **Médio Prazo**
 
 Backend:
-* Implementar cache estratégico (Redis) para consultas frequentes *
-* Adicionar suporte a GraphQL como alternativa ao REST *
-* Sistema de alertas automáticos para valores críticos *
-* Sistema de notificações em tempo real (WebSockets/ActionCable) *
-* Notificações por email para resultados prontos *
+* Implementar cache estratégico (Redis) para consultas frequentes 
+* Adicionar suporte a GraphQL como alternativa ao REST 
+* Sistema de alertas automáticos para valores críticos 
+* Sistema de notificações em tempo real (WebSockets/ActionCable) 
+* Notificações por email para resultados prontos 
 
 Frontend:
-* React Query/TanStack Query - Migração do sistema de requests *
+* React Query/TanStack Query - Migração do sistema de requests 
 Justificativa: Cache automático, deduplicação, sync em background
 Trigger: Quando app crescer para 100+ queries ou precisar de features avançadas
 Benefícios: Performance, DX, real-time updates
-* Implementar PWA (Progressive Web App) *
-* Adicionar i18n (internacionalização) *
-* Migrar para TypeScript *
-* Implementar lazy loading de componentes *
+* Implementar PWA (Progressive Web App) 
+* Adicionar i18n (internacionalização) 
+* Migrar para TypeScript 
+* Implementar lazy loading de componentes 
 
