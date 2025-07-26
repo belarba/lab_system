@@ -1,4 +1,3 @@
-# app/services/csv_analyzer_service.rb
 class CsvAnalyzerService
   require 'csv'
   require 'digest'
@@ -52,13 +51,14 @@ class CsvAnalyzerService
     delimiter_scores = {}
 
     delimiters.each do |delimiter|
+      actual_delimiter = delimiter == '\t' ? "\t" : delimiter
       scores = sample_lines.map do |line|
-        line.count(delimiter)
+        line.count(actual_delimiter)
       end
 
       # Verificar consistência (mesmo número de delimitadores por linha)
       if scores.uniq.length == 1 && scores.first > 0
-        delimiter_scores[delimiter] = scores.first
+        delimiter_scores[actual_delimiter] = scores.first
       end
     end
 

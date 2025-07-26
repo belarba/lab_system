@@ -1,4 +1,3 @@
-# spec/support/csv_test_helpers.rb
 module CsvTestHelpers
   def ensure_upload_directory
     upload_dir = Rails.root.join('storage', 'uploads', 'csv_files')

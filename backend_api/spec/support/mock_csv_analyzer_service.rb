@@ -13,10 +13,15 @@ RSpec.describe 'Basic CSV Import Test' do
 
   before do
     create(:exam_type, name: 'Glucose', unit: 'mg/dL')
+    FileUtils.mkdir_p(Rails.root.join('storage', 'uploads', 'csv_files'))
+  end
 
-    # Criar diretório se não existir
+  after do
+    # Cleanup files created during tests
     upload_dir = Rails.root.join('storage', 'uploads', 'csv_files')
-    FileUtils.mkdir_p(upload_dir) unless Dir.exist?(upload_dir)
+    Dir.glob(File.join(upload_dir, '*')).each do |file|
+      File.delete(file) if File.file?(file)
+    end
   end
 
   describe 'CSV Import with complete mocks' do
@@ -28,46 +33,35 @@ RSpec.describe 'Basic CSV Import Test' do
 
       upload = create(:lab_file_upload, uploaded_by: lab_tech)
 
-      # Mock completo do analyzer
-      analyzer = double('CsvAnalyzerService',
-        analyze: nil,
-        valid_for_import?: true,
-        validation_errors: [],
-        analysis_result: {
-          file_hash: 'test-hash',
-          encoding: 'UTF-8',
-          delimiter: ',',
-          headers: ['patient_email', 'test_type', 'measured_value', 'unit', 'measured_at']
-        }
-      )
-
-      allow(CsvAnalyzerService).to receive(:new).and_return(analyzer)
-
-      # Mock do salvamento de arquivo para evitar dependências de sistema de arquivos
-      allow_any_instance_of(CsvImportService).to receive(:save_file_to_server).and_return('/mock/path/file.csv')
+      # Garantir que todas as dependências existem
+      expect(patient).to be_persisted
+      expect(patient.roles.pluck(:name)).to include('patient')
+      expect(doctor).to be_persisted
+      expect(doctor.roles.pluck(:name)).to include('doctor')
+      expect(ExamType.find_by(name: 'Glucose')).to be_present
 
       service = CsvImportService.new(upload, csv_content)
 
+      # Debug: vamos ver o que acontece durante o processamento
       expect { service.process }.to change(ExamResult, :count).by(1)
 
       upload.reload
-      expect(upload.status).to be_in(['completed', 'completed_with_warnings'])
-      expect(upload.processed_records).to be >= 1
+      expect(upload.status).to eq('completed')
+      expect(upload.processed_records).to eq(1)
+      expect(upload.failed_records).to eq(0)
+
+      # Verificar se o ExamResult foi criado corretamente
+      result = ExamResult.last
+      expect(result.value).to eq(95.0)
+      expect(result.unit).to eq('mg/dL')
+      expect(result.lab_technician).to eq(lab_tech)
+      expect(result.exam_request.patient).to eq(patient)
+      expect(result.exam_request.exam_type.name).to eq('Glucose')
     end
 
     it 'handles validation errors without file operations' do
       csv_content = "invalid,headers\ndata,here"
       upload = create(:lab_file_upload, uploaded_by: lab_tech)
-
-      # Mock analyzer que retorna erro de validação
-      analyzer = double('CsvAnalyzerService',
-        analyze: nil,
-        valid_for_import?: false,
-        validation_errors: ['Missing required headers: patient_email, test_type']
-      )
-
-      allow(CsvAnalyzerService).to receive(:new).and_return(analyzer)
-
       service = CsvImportService.new(upload, csv_content)
 
       expect { service.process }.not_to change(ExamResult, :count)
@@ -86,21 +80,11 @@ RSpec.describe 'Basic CSV Import Test' do
 
       upload = create(:lab_file_upload, uploaded_by: lab_tech)
 
-      # Mock analyzer
-      analyzer = double('CsvAnalyzerService',
-        analyze: nil,
-        valid_for_import?: true,
-        validation_errors: [],
-        analysis_result: {
-          file_hash: 'test-hash',
-          encoding: 'UTF-8',
-          delimiter: ',',
-          headers: ['patient_email', 'test_type', 'measured_value', 'unit', 'measured_at']
-        }
-      )
-
-      allow(CsvAnalyzerService).to receive(:new).and_return(analyzer)
-      allow_any_instance_of(CsvImportService).to receive(:save_file_to_server).and_return('/mock/path/file.csv')
+      # Garantir que as dependências existem para a primeira linha
+      expect(patient).to be_persisted
+      expect(patient.roles.pluck(:name)).to include('patient')
+      expect(doctor).to be_persisted
+      expect(ExamType.find_by(name: 'Glucose')).to be_present
 
       service = CsvImportService.new(upload, csv_content)
 
@@ -111,6 +95,11 @@ RSpec.describe 'Basic CSV Import Test' do
       expect(upload.processed_records).to eq(1)
       expect(upload.failed_records).to eq(1)
       expect(upload.status).to be_in(['completed_with_warnings', 'completed'])
+
+      # Verificar que apenas o resultado válido foi criado
+      result = ExamResult.last
+      expect(result.exam_request.patient).to eq(patient)
+      expect(result.value).to eq(95.0)
     end
   end
 

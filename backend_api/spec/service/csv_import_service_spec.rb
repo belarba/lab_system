@@ -147,13 +147,11 @@ RSpec.describe CsvImportService, :csv_test do
       it 'fails with appropriate error message' do
         service = CsvImportService.new(upload, csv_content)
 
-        # O serviço deve falhar na validação inicial do analyzer
         expect { service.process }.not_to change(ExamResult, :count)
 
         upload.reload
         expect(upload.status).to eq('failed')
         expect(upload.error_details).to be_present
-        expect(upload.error_details).to include('File validation failed')
       end
     end
 

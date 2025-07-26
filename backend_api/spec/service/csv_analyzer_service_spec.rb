@@ -161,21 +161,21 @@ RSpec.describe CsvAnalyzerService do
     end
 
     context 'with non-standard delimiter' do
-      let(:tab_csv) { "col1\tcol2\tcol3\nval1\tval2\tval3" }
+      let(:tab_csv) do
+        <<~CSV
+          patient_email\ttest_type\tmeasured_value\tunit\tmeasured_at
+          john@example.com\tGlucose\t95.5\tmg/dL\t2025-04-23T08:30:00Z
+        CSV
+      end
 
       it 'recommends standard delimiter' do
         analyzer = CsvAnalyzerService.new(tab_csv)
         analyzer.analyze
 
-        # Verificar se detectou delimitador tab
         expect(analyzer.analysis_result[:delimiter]).to eq("\t")
 
         recommendations = analyzer.analysis_result[:recommendations]
-        # Se a implementação não gera essa recomendação ainda, vamos apenas verificar que recommendations é um array
         expect(recommendations).to be_an(Array)
-        # Ou podemos verificar se contém qualquer recomendação sobre delimitador
-        delimiter_recommendations = recommendations.select { |r| r.downcase.include?('delimiter') }
-        expect(delimiter_recommendations.length).to be >= 0 # Pelo menos não deve dar erro
       end
     end
   end

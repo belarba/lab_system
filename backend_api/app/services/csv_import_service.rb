@@ -13,105 +13,95 @@ class CsvImportService
   end
 
   def process
-    ActiveRecord::Base.transaction do
-      @upload.update!(
-        status: 'processing',
-        processing_started_at: Time.current,
-        processed_at: Time.current
-      )
-      add_detail("Started processing CSV file: #{@upload.filename}")
+    # Inicializar processamento
+    start_processing
 
-      begin
-        # Analisar arquivo antes do processamento
-        analyzer = CsvAnalyzerService.new(@file_content)
-        analyzer.analyze
+    begin
+      # Analisar arquivo
+      analyzer = analyze_file
+      return if analyzer.nil?
 
-        unless analyzer.valid_for_import?
-          raise "File validation failed: #{analyzer.validation_errors.join(', ')}"
-        end
+      # Salvar arquivo no servidor
+      save_file_to_server
 
-        # Salvar informações da análise
-        update_file_analysis(analyzer.analysis_result)
-        add_detail("File analysis completed successfully")
+      # Processar dados
+      process_csv_data(analyzer)
 
-        # Salvar arquivo no servidor
-        @file_path = save_file_to_server
-        add_detail("File saved to server: #{@file_path}")
+      # Finalizar com sucesso
+      finalize_processing
 
-        # Parse CSV com delimitador detectado
-        rows = parse_csv(@file_content, analyzer.analysis_result[:delimiter])
-        @upload.update!(total_records: rows.count)
-        add_detail("Found #{rows.count} records to process")
-
-        # Processar em lotes para melhor performance
-        process_rows_in_batches(rows)
-
-        # Finalizar status
-        update_final_status
-
-      rescue => e
-        handle_critical_error(e)
-        raise ActiveRecord::Rollback # Rollback da transação principal
-      end
+    rescue => e
+      handle_critical_error(e)
     end
   end
 
   private
 
+  def start_processing
+    @upload.update!(
+      status: 'processing',
+      processing_started_at: Time.current,
+      processed_at: Time.current
+    )
+    add_detail("Started processing CSV file: #{@upload.filename}")
+  end
+
+  def analyze_file
+    analyzer = CsvAnalyzerService.new(@file_content)
+    analyzer.analyze
+
+    unless analyzer.valid_for_import?
+      error_message = "File validation failed: #{analyzer.validation_errors.join(', ')}"
+      fail_upload(error_message)
+      return nil
+    end
+
+    # Salvar informações da análise
+    @upload.update!(
+      file_hash: analyzer.analysis_result[:file_hash],
+      file_encoding: analyzer.analysis_result[:encoding],
+      detected_delimiter: analyzer.analysis_result[:delimiter],
+      detected_headers: analyzer.analysis_result[:headers].to_json
+    )
+
+    add_detail("File analysis completed successfully")
+    analyzer
+  end
+
   def save_file_to_server
-    # Criar diretório para uploads se não existir
     upload_dir = Rails.root.join('storage', 'uploads', 'csv_files')
     FileUtils.mkdir_p(upload_dir)
 
-    # Gerar nome único para o arquivo
     timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
     filename = "#{timestamp}_#{@upload.id}_#{sanitize_filename(@upload.filename)}"
-    file_path = upload_dir.join(filename)
+    @file_path = upload_dir.join(filename)
 
-    # Salvar conteúdo no arquivo
-    File.write(file_path, @file_content)
-
-    # Atualizar upload com caminho do arquivo
-    @upload.update!(processing_summary: { file_path: file_path.to_s }.to_json)
-
-    file_path.to_s
+    File.write(@file_path, @file_content)
+    add_detail("File saved to server: #{@file_path}")
   end
 
-  def sanitize_filename(filename)
-    # Remove caracteres perigosos do nome do arquivo
-    filename.gsub(/[^\w\-.]/, '_')
+  def process_csv_data(analyzer)
+    rows = parse_csv(@file_content, analyzer.analysis_result[:delimiter])
+    @upload.update!(total_records: rows.count)
+    add_detail("Found #{rows.count} records to process")
+
+    # Processar em lotes
+    process_rows_in_batches(rows)
   end
 
   def parse_csv(content, delimiter = ',')
-    begin
-      CSV.parse(content, headers: true, header_converters: :symbol, col_sep: delimiter)
-    rescue CSV::MalformedCSVError => e
-      raise "Invalid CSV format: #{e.message}"
-    end
-  end
-
-  def update_file_analysis(analysis)
-    @upload.update!(
-      file_hash: analysis[:file_hash],
-      file_encoding: analysis[:encoding],
-      detected_delimiter: analysis[:delimiter],
-      detected_headers: analysis[:headers].to_json
-    )
+    CSV.parse(content, headers: true, header_converters: :symbol, col_sep: delimiter)
+  rescue CSV::MalformedCSVError => e
+    raise "Invalid CSV format: #{e.message}"
   end
 
   def process_rows_in_batches(rows)
-    batch_size = 50 # Processar em lotes de 50 registros
+    batch_size = 50
 
     rows.each_slice(batch_size).with_index do |batch, batch_index|
       add_detail("Processing batch #{batch_index + 1} (#{batch.size} records)")
-
       process_batch(batch, batch_index * batch_size)
-
-      # Atualizar progresso a cada lote
-      @upload.update!(
-        processed_records: @processed_count,
-        failed_records: @failed_count
-      )
+      update_progress
     end
   end
 
@@ -120,20 +110,13 @@ class CsvImportService
       row_number = start_index + index + 1
 
       begin
-        # Usar sub-transação para cada linha
-        ActiveRecord::Base.transaction(requires_new: true) do
-          process_single_row(row, row_number)
-          @processed_count += 1
-        end
-
+        process_single_row(row, row_number)
+        @processed_count += 1
       rescue => e
         @failed_count += 1
         error_message = "Row #{row_number} failed: #{e.message}"
         add_detail(error_message)
         Rails.logger.warn "CSV Import - #{error_message}"
-
-        # Continuar processamento mesmo com erro
-        next
       end
     end
   end
@@ -154,7 +137,6 @@ class CsvImportService
     # Verificar se já existe resultado para esta requisição
     if exam_request.exam_result.present?
       add_detail("Row #{row_number}: Exam request #{exam_request.id} already has a result, skipping")
-      # Considerar como processado mesmo que tenha sido pulado
       return
     end
 
@@ -174,13 +156,7 @@ class CsvImportService
 
   def validate_row_data(row, row_number)
     required_fields = [:patient_email, :test_type, :measured_value, :unit, :measured_at]
-    missing_fields = []
-
-    required_fields.each do |field|
-      if row[field].blank?
-        missing_fields << field
-      end
-    end
+    missing_fields = required_fields.select { |field| row[field].blank? }
 
     if missing_fields.any?
       raise "Missing required fields: #{missing_fields.join(', ')}"
@@ -197,14 +173,6 @@ class CsvImportService
     unless email.match?(/\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i)
       raise "Invalid email format: #{email}"
     end
-  end
-
-  def parse_numeric_value(value)
-    parsed = value.to_s.strip.to_f
-    if parsed <= 0
-      raise "Value must be greater than 0"
-    end
-    parsed
   end
 
   def find_patient(email)
@@ -226,13 +194,24 @@ class CsvImportService
     exam_type = ExamType.where('LOWER(name) = ?', test_type.downcase).first
 
     unless exam_type
-      # Sugerir tipos similares
       similar_types = ExamType.where('name ILIKE ?', "%#{test_type}%").limit(3).pluck(:name)
       suggestion = similar_types.any? ? " Similar types: #{similar_types.join(', ')}" : ""
       raise "Exam type not found: #{test_type}.#{suggestion}"
     end
 
     exam_type
+  end
+
+  def find_lab_technician
+    if @upload.uploaded_by.lab_technician?
+      @upload.uploaded_by
+    else
+      lab_technician = User.joins(:roles).where(roles: { name: 'lab_technician' }).first
+      unless lab_technician
+        raise "No lab technician available"
+      end
+      lab_technician
+    end
   end
 
   def find_or_create_exam_request(patient, exam_type, measured_at)
@@ -248,25 +227,22 @@ class CsvImportService
                                   .where.not(status: 'cancelled')
                                   .first
 
-    if existing_request
-      existing_request
-    else
-      # Criar nova requisição automaticamente
-      doctor = find_available_doctor
+    return existing_request if existing_request
 
-      ExamRequest.create!(
-        patient: patient,
-        doctor: doctor,
-        exam_type: exam_type,
-        scheduled_date: measured_at,
-        status: 'completed',
-        notes: "Auto-created from CSV import ##{@upload.id} on #{Time.current.strftime('%Y-%m-%d %H:%M')}"
-      )
-    end
+    # Criar nova requisição automaticamente
+    doctor = find_available_doctor
+
+    ExamRequest.create!(
+      patient: patient,
+      doctor: doctor,
+      exam_type: exam_type,
+      scheduled_date: measured_at,
+      status: 'completed',
+      notes: "Auto-created from CSV import ##{@upload.id} on #{Time.current.strftime('%Y-%m-%d %H:%M')}"
+    )
   end
 
   def find_available_doctor
-    # Procurar médico menos carregado ou o primeiro disponível
     doctor = User.joins(:roles)
                  .where(roles: { name: 'doctor' })
                  .left_joins(:doctor_exam_requests)
@@ -281,24 +257,17 @@ class CsvImportService
     doctor
   end
 
-  def find_lab_technician
-    # Priorizar o usuário que fez upload se for lab technician
-    if @upload.uploaded_by.lab_technician?
-      @upload.uploaded_by
-    else
-      # Senão, pegar qualquer lab tech disponível
-      lab_technician = User.joins(:roles).where(roles: { name: 'lab_technician' }).first
-      unless lab_technician
-        raise "No lab technician available"
-      end
-      lab_technician
+  def parse_numeric_value(value)
+    parsed = value.to_s.strip.to_f
+    if parsed <= 0
+      raise "Value must be greater than 0"
     end
+    parsed
   end
 
   def parse_datetime(datetime_str)
     datetime_str = datetime_str.to_s.strip
 
-    # Tentar diferentes formatos de data
     formats = [
       '%Y-%m-%dT%H:%M:%S%z',      # ISO 8601 with timezone
       '%Y-%m-%dT%H:%M:%SZ',       # ISO 8601 UTC
@@ -327,7 +296,6 @@ class CsvImportService
   def build_result_notes(row_number, row)
     notes = ["Imported from CSV upload ##{@upload.id} (row #{row_number})"]
 
-    # Adicionar informações extras se disponíveis
     if row[:notes].present?
       notes << "Original notes: #{row[:notes]}"
     end
@@ -339,20 +307,18 @@ class CsvImportService
     notes.join('. ')
   end
 
-  def add_detail(message)
-    timestamp = Time.current.iso8601
-    detail = {
-      timestamp: timestamp,
-      message: message
-    }
-
-    @processing_details << detail
-
-    # Log importante para debugging
-    Rails.logger.info "CSV Import [#{@upload.id}]: #{message}"
+  def sanitize_filename(filename)
+    filename.gsub(/[^\w\-.]/, '_')
   end
 
-  def update_final_status
+  def update_progress
+    @upload.update!(
+      processed_records: @processed_count,
+      failed_records: @failed_count
+    )
+  end
+
+  def finalize_processing
     total_processed = @processed_count + @failed_count
     success_rate = @upload.total_records > 0 ? ((@processed_count.to_f / @upload.total_records) * 100).round(2) : 0
 
@@ -361,13 +327,12 @@ class CsvImportService
       processed_records: @processed_count,
       failed_records: @failed_count,
       success_rate: success_rate,
-      file_path: @file_path,
+      file_path: @file_path.to_s,
       processing_started_at: @upload.processing_started_at&.iso8601,
       processing_completed_at: Time.current.iso8601,
       details: @processing_details
     }
 
-    # Determinar status final
     final_status = determine_final_status
 
     @upload.update!(
@@ -393,10 +358,24 @@ class CsvImportService
     end
   end
 
+  def fail_upload(error_message)
+    @upload.update_columns(
+      status: 'failed',
+      error_details: error_message,
+      processing_summary: {
+        error: error_message,
+        processed_records: @processed_count,
+        failed_records: @failed_count,
+        details: @processing_details
+      }.to_json
+    )
+    add_detail(error_message)
+  end
+
   def handle_critical_error(error)
     error_message = "Critical error during CSV processing: #{error.message}"
 
-    @upload.update!(
+    @upload.update_columns(
       status: 'failed',
       error_details: error_message,
       processing_summary: {
@@ -411,5 +390,16 @@ class CsvImportService
     add_detail(error_message)
     Rails.logger.error "CSV Import Critical Error [#{@upload.id}]: #{error.message}"
     Rails.logger.error error.backtrace.join("\n") if error.backtrace
+  end
+
+  def add_detail(message)
+    timestamp = Time.current.iso8601
+    detail = {
+      timestamp: timestamp,
+      message: message
+    }
+
+    @processing_details << detail
+    Rails.logger.info "CSV Import [#{@upload.id}]: #{message}"
   end
 end
