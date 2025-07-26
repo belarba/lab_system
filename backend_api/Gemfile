@@ -40,6 +40,7 @@ gem "bcrypt"
 gem "jwt"
 gem "csv"
 gem "jbuilder"
+gem "pundit"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -55,6 +56,7 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "faker"
   gem "shoulda-matchers"
+  gem "pundit-matchers"
 end
 
 group :test do

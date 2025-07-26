@@ -32,12 +32,4 @@ module Authenticable
   def render_unauthorized
     render json: { error: "Unauthorized" }, status: :unauthorized
   end
-
-  def authenticate_role(required_role)
-    return render_forbidden unless current_user.has_role?(required_role)
-  end
-
-  def render_forbidden
-    render json: { error: "Forbidden" }, status: :forbidden
-  end
 end

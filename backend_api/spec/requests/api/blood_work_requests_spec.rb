@@ -170,10 +170,10 @@ RSpec.describe 'Api::BloodWorkRequests', type: :request do
         post "/api/blood_work_requests/#{exam_request.id}/cancel",
              headers: auth_headers(doctor)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:forbidden)
 
         response_data = json_response
-        expect(response_data['error']).to eq('Cannot cancel completed blood work request') if response_data.present?
+        expect(response_data['error']).to eq('Forbidden') if response_data.present?
       end
     end
 

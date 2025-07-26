@@ -3,14 +3,11 @@ class Api::BloodWorkRequestsController < ApplicationController
   before_action :set_blood_work_request, only: [:cancel]
 
   def create
-    # Apenas médicos podem criar requisições
-    return render_forbidden unless current_user.doctor?
+    authorize ExamRequest, :create?
 
-    # Verificar se o paciente existe e tem role de patient
     @patient = find_patient_by_id(blood_work_request_params[:patient_id])
     return render_not_found('Patient not found') unless @patient
 
-    # Verificar se o tipo de exame existe
     @exam_type = ExamType.find_by(id: blood_work_request_params[:exam_type_id])
     return render_not_found('Exam type not found') unless @exam_type
 
@@ -31,14 +28,23 @@ class Api::BloodWorkRequestsController < ApplicationController
   end
 
   def cancel
-    # Verificar permissões para cancelar
-    return render_forbidden unless can_cancel_request?(@blood_work_request)
+    # Primeiro verificar autorização básica
+    authorize @blood_work_request, :cancel?
 
-    # Não pode cancelar se já foi realizado
+    # Depois verificar regras de negócio e retornar erros específicos
     if @blood_work_request.completed?
       return render json: {
         error: 'Cannot cancel completed blood work request'
-      }, status: :unprocessable_entity
+      }, status: :forbidden
+    end
+
+    # Verificar regra específica para pacientes (3 horas antes)
+    if current_user.patient? && current_user == @blood_work_request.patient
+      unless current_user.can_cancel_exam_request?(@blood_work_request)
+        return render json: {
+          error: 'Cannot cancel this request. You can only cancel up to 3 hours before the scheduled time.'
+        }, status: :unprocessable_entity
+      end
     end
 
     if @blood_work_request.update(status: 'cancelled')
@@ -52,11 +58,10 @@ class Api::BloodWorkRequestsController < ApplicationController
   end
 
   def index
-    # Este endpoint pode ser usado para listar requisições gerais (admin/lab_tech)
-    return render_forbidden unless current_user.admin? || current_user.lab_technician?
+    authorize ExamRequest, :blood_work_requests?
 
-    @requests = ExamRequest.includes(:patient, :doctor, :exam_type, :exam_result)
-                          .order(scheduled_date: :desc)
+    @requests = policy_scope(ExamRequest).includes(:patient, :doctor, :exam_type, :exam_result)
+                      .order(scheduled_date: :desc)
 
     # Filtros opcionais
     @requests = @requests.where(status: params[:status]) if params[:status].present?
@@ -67,7 +72,7 @@ class Api::BloodWorkRequestsController < ApplicationController
     @limit = [params[:limit].to_i, 100].min
     @limit = 20 if @limit <= 0
     @offset = [params[:offset].to_i, 0].max
-    @total = ExamRequest.count
+    @total = policy_scope(ExamRequest).count
 
     @requests = @requests.limit(@limit).offset(@offset)
 
@@ -87,15 +92,6 @@ class Api::BloodWorkRequestsController < ApplicationController
         .find_by(id: patient_id)
   end
 
-  def can_cancel_request?(request)
-    # Admin pode cancelar qualquer requisição
-    # Médico pode cancelar suas próprias requisições
-    # Paciente pode cancelar suas próprias requisições
-    current_user.admin? ||
-    current_user == request.doctor ||
-    current_user == request.patient
-  end
-
   def blood_work_request_params
     params.require(:blood_work_request).permit(
       :patient_id,
@@ -107,9 +103,5 @@ class Api::BloodWorkRequestsController < ApplicationController
 
   def render_not_found(message)
     render json: { error: message }, status: :not_found
-  end
-
-  def render_forbidden
-    render json: { error: 'Forbidden' }, status: :forbidden
   end
 end

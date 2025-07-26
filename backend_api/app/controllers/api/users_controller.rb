@@ -2,10 +2,13 @@ class Api::UsersController < ApplicationController
   include Authenticable
 
   def me
+    authorize current_user, :me?
     render 'api/users/me'
   end
 
   def update_me
+    authorize current_user, :update_me?
+
     if current_user.update(user_params)
       render 'api/users/update_me'
     else

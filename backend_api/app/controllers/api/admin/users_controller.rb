@@ -1,8 +1,11 @@
-class Api::Admin::UsersController < Api::Admin::BaseController
+class Api::Admin::UsersController < ApplicationController
+  include Authenticable
   before_action :set_user, only: [:show, :update, :destroy]
 
   def index
-    @users = User.includes(:roles).order(:name)
+    authorize User, :index?
+
+    @users = policy_scope(User).includes(:roles).order(:name)
 
     # Filtros
     @users = @users.joins(:roles).where(roles: { name: params[:role] }) if params[:role].present?
@@ -18,16 +21,17 @@ class Api::Admin::UsersController < Api::Admin::BaseController
   end
 
   def show
-    # @user já está definido pelo before_action
+    authorize @user
   end
 
   def create
+    authorize User, :create?
+
     @user = User.new(user_params)
     @user.password = params[:password] || 'defaultpassword123'
     @user.password_confirmation = @user.password
 
     if @user.save
-      # Atribuir roles
       if params[:role_ids].present?
         roles = Role.where(id: params[:role_ids])
         @user.roles = roles
@@ -43,8 +47,9 @@ class Api::Admin::UsersController < Api::Admin::BaseController
   end
 
   def update
+    authorize @user
+
     if @user.update(user_params)
-      # Atualizar roles se fornecido
       if params[:role_ids].present?
         roles = Role.where(id: params[:role_ids])
         @user.roles = roles
@@ -60,11 +65,7 @@ class Api::Admin::UsersController < Api::Admin::BaseController
   end
 
   def destroy
-    if @user == current_user
-      return render json: {
-        error: 'You cannot delete your own account'
-      }, status: :unprocessable_entity
-    end
+    authorize @user
 
     if @user.destroy
       render :destroy
@@ -81,7 +82,7 @@ class Api::Admin::UsersController < Api::Admin::BaseController
   def set_user
     @user = User.find(params[:id])
   rescue ActiveRecord::RecordNotFound
-    render_not_found('User not found')
+    render json: { error: 'User not found' }, status: :not_found
   end
 
   def user_params

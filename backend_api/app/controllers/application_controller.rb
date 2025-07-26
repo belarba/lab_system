@@ -1,15 +1,15 @@
 class ApplicationController < ActionController::API
-  # Adicionar suporte para respond_to em APIs Rails
   include ActionController::MimeResponds
+  include Pundit::Authorization
 
-  # Desabilitar proteção CSRF para API
-  # protect_from_forgery with: :null_session
   before_action :set_default_response_format
 
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   rescue_from ActionController::ParameterMissing, with: :render_bad_request
+  rescue_from Pundit::NotAuthorizedError, with: :render_forbidden
 
   private
+
   def set_default_response_format
     request.format = :json
   end
@@ -20,5 +20,9 @@ class ApplicationController < ActionController::API
 
   def render_bad_request(exception = nil)
     render json: { error: 'Bad request', message: exception&.message }, status: :bad_request
+  end
+
+  def render_forbidden
+    render json: { error: 'Forbidden' }, status: :forbidden
   end
 end

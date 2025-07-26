@@ -3,6 +3,7 @@ ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 require 'rspec/rails'
+require 'pundit/matchers'
 
 begin
   ActiveRecord::Migration.maintain_test_schema!
@@ -16,6 +17,9 @@ Dir[Rails.root.join('spec', 'support', '**', '*.rb')].sort.each { |f| require f 
 RSpec.configure do |config|
   # Factory Bot
   config.include FactoryBot::Syntax::Methods
+
+  # Pundit matchers
+  config.include Pundit::Matchers
 
   # Remover a linha problemática do fixture_path
   config.use_transactional_fixtures = true
