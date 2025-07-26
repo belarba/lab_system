@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_28_103113) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_26_123111) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -69,8 +69,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_28_103113) do
     t.text "processing_summary"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "original_filename"
+    t.string "file_hash"
+    t.datetime "processing_started_at"
+    t.datetime "processing_completed_at"
+    t.integer "retry_count", default: 0
+    t.string "file_encoding"
+    t.string "detected_delimiter"
+    t.text "detected_headers"
+    t.index ["created_at", "status"], name: "index_lab_file_uploads_on_created_at_and_status"
+    t.index ["file_hash"], name: "index_lab_file_uploads_on_file_hash"
     t.index ["processed_at"], name: "index_lab_file_uploads_on_processed_at"
+    t.index ["processing_started_at"], name: "index_lab_file_uploads_on_processing_started_at"
+    t.index ["retry_count"], name: "index_lab_file_uploads_on_retry_count"
     t.index ["status"], name: "index_lab_file_uploads_on_status"
+    t.index ["uploaded_by_id", "status"], name: "index_lab_file_uploads_on_uploaded_by_id_and_status"
     t.index ["uploaded_by_id"], name: "index_lab_file_uploads_on_uploaded_by_id"
   end
 

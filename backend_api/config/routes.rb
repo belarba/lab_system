@@ -57,7 +57,19 @@ Rails.application.routes.draw do
     end
 
     # Lab File Uploads
-    resources :uploads, only: [:index, :create, :show]
+    resources :uploads, only: [:index, :create, :show] do
+      member do
+        get :download
+        delete :delete_file
+        post :reprocess
+        get :analysis # Nova rota para ver análise detalhada do arquivo
+      end
+
+      collection do
+        get :stats # Estatísticas gerais de uploads
+        post :validate # Validar arquivo sem processar
+      end
+    end
 
     # Admin namespace - seguindo convenções REST
     namespace :admin do
